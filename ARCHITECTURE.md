@@ -138,18 +138,46 @@ World Monitor/
 
 ---
 
-## Estado del Proyecto (inicio sesión 1)
+## Estado del Proyecto
 
+### Sesión 1 (scaffolding)
 - [x] Estructura de carpetas
 - [x] requirements.txt
 - [x] ARCHITECTURE.md (este fichero)
 - [x] config.py
-- [x] .env.example
-- [x] .gitignore
-- [x] database/database.py
+- [x] .env.example / .gitignore
+- [x] database/database.py (7 tablas SQLAlchemy)
 - [x] database/init_db.py
 - [x] app.py (layout base + sidebar + routing)
 - [x] README.md
-- [ ] Colectores (sesión 2+)
-- [ ] Módulos individuales (sesión 2+)
-- [ ] Scheduler jobs (sesión 2+)
+
+### Sesión 2 (colector FRED)
+- [x] collectors/base_collector.py — clase base abstracta (interfaz común)
+- [x] collectors/fred_collector.py — colector FRED completo (55 series, 8 grupos)
+- [x] collectors/__init__.py
+- [x] scripts/test_fred.py — script de prueba con 5 series
+
+### Pendiente (sesión 3+)
+- [ ] collectors/yfinance_collector.py
+- [ ] collectors/worldbank_collector.py
+- [ ] collectors/ecb_collector.py
+- [ ] collectors/eurostat_collector.py
+- [ ] collectors/coingecko_collector.py
+- [ ] collectors/newsapi_collector.py
+- [ ] collectors/gdelt_collector.py
+- [ ] Módulos individuales (modules/mXX_*.py)
+- [ ] scheduler/jobs.py
+
+---
+
+## Notas sobre el colector FRED
+
+- **55 series** agrupadas en 8 grupos: PIB, Inflación, Fed, Curva tipos, Laboral, Deuda, Estrés Financiero, Inmobiliario.
+- **Anti-duplicados**: usa `MAX(timestamp)` por indicator_id para insertar solo datos nuevos (eficiente, sin UniqueConstraint).
+- **Derived series** calculadas y persistidas automáticamente:
+  - YoY de 8 series de inflación → `fred_*_yoy_us`
+  - MoM del IPC → `fred_cpi_mom_us`
+  - Tipo real = FEDFUNDS – CPI YoY → `fred_real_rate_us`
+  - Spread 10y-2y calculado → `fred_spread_10y2y_calc_us`
+- **`download_series(list, start)`**: método público para descargar subconjuntos (pruebas).
+- **`run_update()`** usa buffer de 30 días para capturar revisiones retroactivas de FRED.
