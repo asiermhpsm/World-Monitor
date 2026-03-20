@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "WebFetch(domain:pypi.org)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:softhints.com)",
+      "Bash(venv/Scripts/pip install:*)",
+      "Bash(venv/Scripts/python -c \":*)",
+      "Bash(venv/Scripts/python scripts/test_yahoo.py)",
+      "Bash(pip install:*)",
+      "Bash(python scripts/test_yahoo.py)",
+      "Bash(python -c \":*)"
+    ]
+  }
+}

@@ -157,8 +157,19 @@ World Monitor/
 - [x] collectors/__init__.py
 - [x] scripts/test_fred.py — script de prueba con 5 series
 
-### Pendiente (sesión 3+)
-- [ ] collectors/yfinance_collector.py
+### Sesión 3 (colector Yahoo Finance)
+- [x] collectors/yahoo_collector.py — 111 tickers, 8 categorías, batch de 20, métricas derivadas
+- [x] scripts/test_yahoo.py — prueba con 6 tickers + ratio oro/plata + RSP/SPY
+
+### Sesión 4 (bug fix Yahoo Finance)
+- [x] Actualizado yfinance 0.2.40 → 1.2.0 + curl_cffi (anti-bot Yahoo Finance 2024)
+- [x] Eliminado parámetro `threads` (removido en yfinance 1.x)
+- [x] Reescrito `_download_batch()` para manejar siempre MultiIndex (yfinance 1.x)
+- [x] Añadida sesión curl_cffi a `yf.Ticker()` para impersonación Chrome
+- [x] Corregidos caracteres Unicode en scripts y colector (compatibilidad Windows cp1252)
+- [x] Test exitoso: 29,714 registros, 9 tickers, 0 fallos
+
+### Pendiente (sesión 5+)
 - [ ] collectors/worldbank_collector.py
 - [ ] collectors/ecb_collector.py
 - [ ] collectors/eurostat_collector.py

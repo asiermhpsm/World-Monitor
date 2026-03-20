@@ -14,7 +14,10 @@ python-dotenv==1.0.1
 fredapi==0.5.1
 
 # Yahoo Finance — mercados, índices, divisas, materias primas
-yfinance==0.2.40
+# 1.x requerido: Yahoo Finance cambió API anti-bot en 2024 (0.2.x da JSONDecodeError)
+yfinance==1.2.0
+# Impersonación de navegador Chrome (auto-usado por yfinance 1.x internamente)
+curl_cffi>=0.7.4,<0.14
 
 # World Bank
 wbdata==1.0.0
