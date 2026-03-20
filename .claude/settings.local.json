@@ -10,7 +10,8 @@
       "Bash(venv/Scripts/python scripts/test_yahoo.py)",
       "Bash(pip install:*)",
       "Bash(python scripts/test_yahoo.py)",
-      "Bash(python -c \":*)"
+      "Bash(python -c \":*)",
+      "Bash(python scripts/test_worldbank.py)"
     ]
   }
 }

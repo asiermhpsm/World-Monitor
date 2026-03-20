@@ -169,8 +169,14 @@ World Monitor/
 - [x] Corregidos caracteres Unicode en scripts y colector (compatibilidad Windows cp1252)
 - [x] Test exitoso: 29,714 registros, 9 tickers, 0 fallos
 
-### Pendiente (sesión 5+)
-- [ ] collectors/worldbank_collector.py
+### Sesión 5 (colector World Bank)
+- [x] collectors/worldbank_collector.py — 54 indicadores, 45 paises/regiones, sin API key
+- [x] collectors/__init__.py — actualizado con WorldBankCollector
+- [x] scripts/test_worldbank.py — descarga 5 indicadores x 6 paises, tabla comparativa + 3 rankings
+- [x] Test exitoso: 664 registros, 5 indicadores, 0 fallos, dedup OK
+
+### Pendiente (sesión 6+)
+- [ ] collectors/ecb_collector.py
 - [ ] collectors/ecb_collector.py
 - [ ] collectors/eurostat_collector.py
 - [ ] collectors/coingecko_collector.py
