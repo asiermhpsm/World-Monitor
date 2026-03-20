@@ -8,5 +8,6 @@ from collectors.base_collector import BaseCollector
 from collectors.fred_collector import FREDCollector
 from collectors.yahoo_collector import YahooCollector
 from collectors.worldbank_collector import WorldBankCollector
+from collectors.europe_collector import EuropeCollector
 
-__all__ = ["BaseCollector", "FREDCollector", "YahooCollector", "WorldBankCollector"]
+__all__ = ["BaseCollector", "FREDCollector", "YahooCollector", "WorldBankCollector", "EuropeCollector"]

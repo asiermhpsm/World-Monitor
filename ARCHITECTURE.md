@@ -175,15 +175,41 @@ World Monitor/
 - [x] scripts/test_worldbank.py — descarga 5 indicadores x 6 paises, tabla comparativa + 3 rankings
 - [x] Test exitoso: 664 registros, 5 indicadores, 0 fallos, dedup OK
 
-### Pendiente (sesión 6+)
-- [ ] collectors/ecb_collector.py
-- [ ] collectors/ecb_collector.py
-- [ ] collectors/eurostat_collector.py
+### Sesión 6 (colector Europe: BCE + Eurostat)
+- [x] collectors/europe_collector.py — BCE (tipos, ESTR, M1/M2/M3, crédito, curva EA) + Eurostat (HICP, desempleo, PIB, producción industrial, deuda EDP, confianza consumidor, comercio exterior)
+- [x] collectors/__init__.py — actualizado con EuropeCollector
+- [x] scripts/test_europe.py — prueba con 4 series BCE + 3 FRED + HICP eurostat, spreads, semáforo
+- [x] Test exitoso: 2,092 registros, 11 series, 0 fallos
+
+### Pendiente (sesión 7+)
 - [ ] collectors/coingecko_collector.py
 - [ ] collectors/newsapi_collector.py
 - [ ] collectors/gdelt_collector.py
 - [ ] Módulos individuales (modules/mXX_*.py)
 - [ ] scheduler/jobs.py
+
+---
+
+## Notas sobre el colector Europe (BCE + Eurostat)
+
+- **BCE (ECB SDMX-JSON API)**: `https://data-api.ecb.europa.eu/service/data/{FLOW}/{KEY}?format=jsondata`
+  - Funciona: tipos oficiales (FM), ESTR (EST), M1/M2/M3 + crédito (BSI), curva EA 10Y (YC)
+  - No disponible vía nueva API: EURIBOR (claves de 8 dims con flow FM/BB), bonos soberanos por país
+- **Bonos soberanos por país**: Vía FRED API (`IRLTLT01DEMxxx`, `IRLTLT01ESMxxx`, etc.), almacenados con source='ecb' e IDs `ecb_bund_10y_de`, `ecb_yield_10y_es`, etc. Requiere FRED_API_KEY.
+- **EURIBOR 3M proxy**: FRED serie `IR3TIB01EZM156N` → `ecb_euribor_3m_ea`
+- **Eurostat SDMX 2.1**: `https://ec.europa.eu/eurostat/api/dissemination/sdmx/2.1/data/{dataset}/{key}`
+  - La clave SDMX se construye con formato `.{unit}.{coicop}.{geo}` (punto inicial = wildcard para FREQ)
+  - Parámetro de tiempo: `sinceTimePeriod` (no `startPeriod`)
+  - La respuesta puede venir gzip-comprimida sin declarar `Content-Encoding` — requiere detección manual (magic bytes `1f8b`)
+  - Dimensiones confirmadas por dataset:
+    - `prc_hicp_aind`: `[freq, unit, coicop, geo]`
+    - `une_rt_m`: `[freq, s_adj, age, unit, sex, geo]`
+    - `namq_10_gdp`: `[freq, unit, s_adj, na_item, geo]`
+    - `sts_inpr_m`: `[freq, indic_bt, nace_r2, s_adj, unit, geo]`
+    - `gov_10dd_edpt1`: `[freq, unit, sector, na_item, geo]`
+    - `ei_bsco_m` (confianza consumidor, reemplaza ei_bssi_m que da 404): `[freq, indic, s_adj, unit, geo]`
+    - `ext_lt_maineu`: `[freq, indic_et, sitc06, partner, geo]` (geo solo `EU27_2020`)
+- **Spreads soberanos**: `(yield_país - bund_DE) × 100` en puntos básicos. Calculados y persistidos con source='ecb_derived'. Requieren bonos de ambos países en BD.
 
 ---
 
