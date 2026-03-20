@@ -9,5 +9,13 @@ from collectors.fred_collector import FREDCollector
 from collectors.yahoo_collector import YahooCollector
 from collectors.worldbank_collector import WorldBankCollector
 from collectors.europe_collector import EuropeCollector
+from collectors.coingecko_collector import CoinGeckoCollector
 
-__all__ = ["BaseCollector", "FREDCollector", "YahooCollector", "WorldBankCollector", "EuropeCollector"]
+__all__ = [
+    "BaseCollector",
+    "FREDCollector",
+    "YahooCollector",
+    "WorldBankCollector",
+    "EuropeCollector",
+    "CoinGeckoCollector",
+]

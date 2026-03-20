@@ -181,8 +181,13 @@ World Monitor/
 - [x] scripts/test_europe.py — prueba con 4 series BCE + 3 FRED + HICP eurostat, spreads, semáforo
 - [x] Test exitoso: 2,092 registros, 11 series, 0 fallos
 
-### Pendiente (sesión 7+)
-- [ ] collectors/coingecko_collector.py
+### Sesión 7 (colector CoinGecko + Alternative.me)
+- [x] collectors/coingecko_collector.py — 7 criptos (USD + EUR para BTC/ETH), datos globales, F&G, stablecoins, halvings, 4 metricas derivadas
+- [x] collectors/__init__.py — actualizado con CoinGeckoCollector
+- [x] scripts/test_coingecko.py — prueba 30 dias BTC/ETH, snapshot global, F&G, SSR, halvings
+- [x] Test exitoso: 304 registros, 22 series, 0 fallos, halvings OK, 429 handled
+
+### Pendiente (sesión 8+)
 - [ ] collectors/newsapi_collector.py
 - [ ] collectors/gdelt_collector.py
 - [ ] Módulos individuales (modules/mXX_*.py)

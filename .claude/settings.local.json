@@ -12,7 +12,8 @@
       "Bash(python scripts/test_yahoo.py)",
       "Bash(python -c \":*)",
       "Bash(python scripts/test_worldbank.py)",
-      "Bash(python scripts/test_europe.py)"
+      "Bash(python scripts/test_europe.py)",
+      "Bash(python scripts/test_coingecko.py)"
     ]
   }
 }
