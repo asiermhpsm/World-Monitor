@@ -298,3 +298,127 @@ def get_db_last_update() -> Optional[datetime]:
         return result
     except Exception:
         return None
+
+
+# ── Poder adquisitivo ──────────────────────────────────────────────────────────
+
+def calculate_real_purchasing_power(
+    amount: float,
+    start_date: str,
+    country_code: str,
+    end_date: Optional[str] = None,
+) -> Optional[dict]:
+    """
+    Calcula la erosion del poder adquisitivo de una cantidad por inflacion acumulada.
+
+    Parametros:
+      amount      : cantidad inicial (ej. 10000)
+      start_date  : fecha de inicio en formato 'YYYY-MM-DD'
+      country_code: 'US', 'EA', 'DE', 'ES', 'IT'
+      end_date    : fecha de fin (por defecto hoy)
+
+    Devuelve un dict con:
+      valor_nominal, valor_real, perdida_absoluta, perdida_porcentual,
+      inflacion_acumulada, serie_temporal (DataFrame mensual)
+    O None si no hay datos suficientes.
+    """
+    CPI_SERIES = {
+        "US": "fred_cpi_us",          # nivel mensual → se calcula acumulado
+        "EA": "estat_hicp_cp00_ea20",  # YoY anual → se usa acumulado
+        "DE": "estat_hicp_cp00_de",
+        "ES": "estat_hicp_cp00_es",
+        "IT": "estat_hicp_cp00_it",
+    }
+
+    sid = CPI_SERIES.get(country_code.upper())
+    if sid is None:
+        logger.debug("calculate_real_purchasing_power: pais desconocido %s", country_code)
+        return None
+
+    try:
+        start_dt = datetime.strptime(start_date[:10], "%Y-%m-%d")
+    except ValueError:
+        return None
+
+    end_dt = datetime.utcnow()
+    if end_date:
+        try:
+            end_dt = datetime.strptime(end_date[:10], "%Y-%m-%d")
+        except ValueError:
+            pass
+
+    # Pedir datos con suficiente margen
+    days_needed = (end_dt - start_dt).days + 60
+    df = get_series(sid, days=days_needed)
+    if df.empty:
+        return None
+
+    df = df.sort_values("timestamp").reset_index(drop=True)
+
+    # Para series de nivel (fred_cpi_us), calcular inflacion acumulada directamente
+    if country_code.upper() == "US":
+        # Serie de niveles → buscar valor inicio y valor fin
+        sub_start = df[df["timestamp"] <= start_dt + timedelta(days=40)]
+        sub_end   = df[df["timestamp"] <= end_dt]
+        if sub_start.empty or sub_end.empty:
+            return None
+        cpi_start = float(sub_start.iloc[-1]["value"])
+        cpi_end   = float(sub_end.iloc[-1]["value"])
+        if cpi_start == 0:
+            return None
+        acc_inflation = (cpi_end / cpi_start - 1) * 100
+
+        # Serie temporal mensual de valor real
+        mask = (df["timestamp"] >= start_dt - timedelta(days=40)) & \
+               (df["timestamp"] <= end_dt + timedelta(days=10))
+        df_range = df[mask].copy()
+        if not df_range.empty:
+            df_range["nominal"] = amount
+            df_range["real"] = amount * (cpi_start / df_range["value"])
+        else:
+            df_range = pd.DataFrame(columns=["timestamp", "nominal", "real"])
+
+    else:
+        # Serie de YoY% → acumulamos
+        sub_start = df[df["timestamp"] <= start_dt + timedelta(days=400)]
+        sub_end   = df[df["timestamp"] <= end_dt + timedelta(days=30)]
+        if sub_start.empty or sub_end.empty:
+            return None
+
+        # Calcular inflacion acumulada compuesta desde los YoY anuales
+        mask = (df["timestamp"] >= start_dt - timedelta(days=30)) & \
+               (df["timestamp"] <= end_dt + timedelta(days=30))
+        df_range = df[mask].copy()
+
+        if df_range.empty:
+            return None
+
+        # Deflactar usando acumulado compuesto
+        nominal_vals = []
+        real_vals = []
+        cum_factor = 1.0
+        prev_ts = None
+        for _, row in df_range.iterrows():
+            if prev_ts is not None:
+                years_frac = (row["timestamp"] - prev_ts).days / 365.0
+                cum_factor *= (1 + row["value"] / 100) ** years_frac
+            nominal_vals.append(amount)
+            real_vals.append(amount / cum_factor)
+            prev_ts = row["timestamp"]
+
+        df_range = df_range.copy()
+        df_range["nominal"] = nominal_vals
+        df_range["real"] = real_vals
+        acc_inflation = (cum_factor - 1) * 100
+
+    valor_real = amount / (1 + acc_inflation / 100)
+    perdida = valor_real - amount
+
+    return {
+        "valor_nominal":      amount,
+        "valor_real":         round(valor_real, 2),
+        "perdida_absoluta":   round(perdida, 2),
+        "perdida_porcentual": round(perdida / amount * 100, 2),
+        "inflacion_acumulada": round(acc_inflation, 2),
+        "serie_temporal":     df_range if "timestamp" in df_range.columns else None,
+    }
