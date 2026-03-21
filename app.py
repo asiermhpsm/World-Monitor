@@ -19,6 +19,7 @@ from modules.module_02_macro import register_callbacks_module_2, render_module_2
 from modules.module_03_inflation import register_callbacks_module_3, render_module_3
 from modules.module_04_monetary_policy import register_callbacks_module_4, render_module_4
 from modules.module_05_markets import register_callbacks_module_5, render_module_5
+from modules.module_06_labor import register_callbacks_module_6, render_module_6
 from components.scheduler_status import (
     build_alerts_bar,
     build_scheduler_panel,
@@ -435,6 +436,8 @@ def render_page(pathname):
             return render_module_4()
         if n == 5:
             return render_module_5()
+        if n == 6:
+            return render_module_6()
         return build_module_placeholder(n)
 
     # Cualquier otra ruta → 404
@@ -527,6 +530,7 @@ register_callbacks_module_2(app)
 register_callbacks_module_3(app)
 register_callbacks_module_4(app)
 register_callbacks_module_5(app)
+register_callbacks_module_6(app)
 
 
 # ── Arranque ──────────────────────────────────────────────────────────────────

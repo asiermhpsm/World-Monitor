@@ -577,3 +577,61 @@ def calculate_real_purchasing_power(
         "inflacion_acumulada": round(acc_inflation, 2),
         "serie_temporal":     df_range if "timestamp" in df_range.columns else None,
     }
+
+
+# ── Mercado Laboral (Módulo 6) ─────────────────────────────────────────────────
+
+def calculate_sahm_indicator():
+    """
+    Calcula el Indicador de Sahm de recesión a partir de fred_unemployment_us.
+
+    Devuelve:
+      (sahm_current, alert_level, df_history)
+      sahm_current : float o None
+      alert_level  : 'green' | 'yellow' | 'red' | None
+      df_history   : DataFrame(timestamp, sahm) ordenado ascendente, o vacío
+    """
+    df = get_series("fred_unemployment_us", days=365 * 30)
+    if df.empty or len(df) < 15:
+        return None, None, pd.DataFrame(columns=["timestamp", "sahm"])
+
+    df = df.sort_values("timestamp").reset_index(drop=True)
+    df["roll3m"] = df["value"].rolling(3).mean()
+    df["min12m"] = df["value"].rolling(12).min()
+    df["sahm"] = df["roll3m"] - df["min12m"]
+    df = df.dropna(subset=["sahm"])
+
+    if df.empty:
+        return None, None, pd.DataFrame(columns=["timestamp", "sahm"])
+
+    sahm_current = float(df.iloc[-1]["sahm"])
+    if sahm_current < 0.3:
+        level = "green"
+    elif sahm_current < 0.5:
+        level = "yellow"
+    else:
+        level = "red"
+
+    return sahm_current, level, df[["timestamp", "sahm"]].reset_index(drop=True)
+
+
+def get_nfp_history(months: int = 24) -> pd.DataFrame:
+    """
+    Devuelve el historial de NFP de los últimos N meses.
+    Como el DB almacena el nivel acumulado (miles de empleos), calcula las
+    variaciones mensuales cuando hay suficiente historia.
+
+    Columns: fecha, nfp_level, nfp_mom, avg_3m, avg_12m
+    """
+    days = months * 32 + 400
+    df = get_series("fred_nfp_us", days=days)
+    if df.empty:
+        return pd.DataFrame(columns=["fecha", "nfp_level", "nfp_mom", "avg_3m", "avg_12m"])
+
+    df = df.sort_values("timestamp").reset_index(drop=True)
+    df["nfp_mom"] = df["value"].diff()   # variación mensual en miles
+    df["avg_3m"]  = df["nfp_mom"].rolling(3).mean()
+    df["avg_12m"] = df["nfp_mom"].rolling(12).mean()
+    df = df.rename(columns={"timestamp": "fecha", "value": "nfp_level"})
+    df = df.tail(months).reset_index(drop=True)
+    return df[["fecha", "nfp_level", "nfp_mom", "avg_3m", "avg_12m"]]
