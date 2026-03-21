@@ -25,7 +25,10 @@
       "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://127.0.0.1:8050/assets/custom.css)",
       "Bash(taskkill /F /IM python.exe /FI \"WINDOWTITLE eq *app*\")",
       "Bash(pkill -f \"python.*app.py\")",
-      "Bash(taskkill //F //IM python.exe)"
+      "Bash(taskkill //F //IM python.exe)",
+      "Bash(timeout 12 venv/Scripts/python.exe app.py)",
+      "Bash(venvScriptspython.exe -c \":*)",
+      "Bash(\"./venv/Scripts/python.exe\" -c \":*)"
     ]
   }
 }

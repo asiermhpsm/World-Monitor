@@ -78,7 +78,7 @@ def get_base_layout(title: str | None = None, height: int = 400) -> dict:
     if title:
         layout["title"] = {
             "text":    title,
-            "font":    {"color": "#e5e7eb", "size": 13, "weight": 600},
+            "font":    {"color": "#e5e7eb", "size": 13},
             "x":       0.0,
             "xanchor": "left",
             "pad":     {"l": 4},
