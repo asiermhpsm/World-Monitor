@@ -187,13 +187,37 @@ World Monitor/
 - [x] scripts/test_coingecko.py — prueba 30 dias BTC/ETH, snapshot global, F&G, SSR, halvings
 - [x] Test exitoso: 304 registros, 22 series, 0 fallos, halvings OK, 429 handled
 
-### Pendiente (sesión 8+)
-- [ ] collectors/newsapi_collector.py
-- [ ] collectors/gdelt_collector.py
+### Sesión 8 (colector Noticias + Geopolítica)
+- [x] database/database.py — 2 nuevas tablas: NewsArticle (URL unique), GeopoliticalEvent
+- [x] collectors/news_collector.py — NewsCollector completo:
+      NewsAPI (8 queries clasificadas), GPR Caldara & Iacoviello (7 series via Excel),
+      GDELT (tono global), auto-generación de eventos, add_manual_event, get_top_stories
+- [x] collectors/__init__.py — actualizado con NewsCollector
+- [x] scripts/test_news.py — 2 queries NewsAPI + 7 GPR + GDELT + eventos + evento manual
+- [x] Test exitoso: 31 articulos, 2198 registros GPR (314 por serie × 7), GDELT OK, 0 errores
+
+### Pendiente (sesión 9+)
 - [ ] Módulos individuales (modules/mXX_*.py)
 - [ ] scheduler/jobs.py
 
 ---
+
+## Notas sobre el colector de Noticias (NewsCollector)
+
+- **NewsAPI** (`newsapi.org`): Plan gratuito 100 req/día. Counter en `data/newsapi_requests.json`.
+  8 queries preconfiguradas. En modo degradado (sin key) solo descarga GPR y GDELT.
+- **GPR Index (Caldara & Iacoviello)**: Las series GPR NO están en la FRED API.
+  Se descargan directamente del Excel publicado por los autores en su web:
+  `https://www.matteoiacoviello.com/gpr_files/data_gpr_export.xls`
+  Series disponibles: `GPR` (global 1985+), `GPRH` (histórico 1900+), `GPRC_USA/CHN/RUS/DEU/ISR`.
+  No existe `GPRC_IRN` (Irán) — sustituido por `GPRC_ISR` (Israel/proxy Oriente Medio).
+  Guardadas en `time_series` con `source='FRED_GPR'`. Requiere `xlrd>=2.0.1`.
+- **GDELT**: Tono global de noticias vía endpoint de resumen. Complemento, no dato crítico.
+  Guardado en `time_series` con `source='GDELT'` e `indicator_id='gdelt_global_tone'`.
+- **Zonas GPR semáforo**: <100 verde, 100-150 amarillo, 150-200 naranja, >200 rojo.
+  Picos históricos: 11-S 2001 (~450), Ucrania 2022 (~230), Guerra del Golfo (~250).
+- **Auto-generación de eventos**: Artículos con impact_score > 0.5 → clusters por keywords
+  compartidas (>= 2 keywords) → `GeopoliticalEvent` con severity 2-5 calculada.
 
 ## Notas sobre el colector Europe (BCE + Eurostat)
 

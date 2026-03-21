@@ -22,6 +22,7 @@ from sqlalchemy import (
     Integer,
     String,
     Text,
+    UniqueConstraint,
     create_engine,
 )
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
@@ -202,6 +203,76 @@ class Scenario(Base):
 
     def __repr__(self):
         return f"<Scenario '{self.title}' prob={self.probability}>"
+
+
+# ── 8. Artículos de noticias (NewsCollector / Módulo 10) ──────────────────────
+
+class NewsArticle(Base):
+    """
+    Artículos de noticias clasificados y puntuados por relevancia financiera.
+
+    url: clave única — evita duplicados entre ejecuciones.
+    impact_score: 0.0 – 1.0 calculado por coincidencia de keywords críticas/relevantes.
+    category: macro | markets | geopolitics | energy | crypto | central_banks
+    region: US | EU | China | Japan | Middle_East | Russia_Ukraine | Emerging_Markets | Global
+    """
+    __tablename__ = "news_articles"
+
+    id              = Column(Integer, primary_key=True, autoincrement=True)
+    title           = Column(String(500), nullable=False)
+    description     = Column(String(1000), nullable=True)
+    url             = Column(String(500), nullable=False)
+    source_name     = Column(String(100), nullable=True)
+    published_at    = Column(DateTime, nullable=True)
+    category        = Column(String(50), nullable=True)
+    region          = Column(String(50), nullable=True)
+    impact_score    = Column(Float, nullable=True, default=0.0)
+    keywords_matched = Column(String(200), nullable=True)
+    created_at      = Column(DateTime, default=datetime.utcnow)
+
+    __table_args__ = (
+        UniqueConstraint("url", name="uq_news_articles_url"),
+        Index("ix_news_articles_impact", "impact_score"),
+        Index("ix_news_articles_published", "published_at"),
+        Index("ix_news_articles_category", "category"),
+    )
+
+    def __repr__(self):
+        return f"<NewsArticle '{self.title[:50]}' score={self.impact_score}>"
+
+
+# ── 9. Eventos geopolíticos (NewsCollector / Módulo 10) ───────────────────────
+
+class GeopoliticalEvent(Base):
+    """
+    Eventos geopolíticos relevantes para los mercados financieros.
+
+    Pueden generarse automáticamente (is_manual=False) a partir de artículos
+    de alto impacto, o añadirse manualmente por el usuario (is_manual=True).
+    severity: 1=menor, 2=moderado, 3=significativo, 4=alto, 5=crítico
+    """
+    __tablename__ = "geopolitical_events"
+
+    id            = Column(Integer, primary_key=True, autoincrement=True)
+    date          = Column(DateTime, nullable=False)
+    title         = Column(String(300), nullable=False)
+    description   = Column(String(1000), nullable=True)
+    category      = Column(String(50), nullable=True)   # conflict, sanction, election, trade_war, energy, financial_crisis
+    region        = Column(String(100), nullable=True)
+    severity      = Column(Integer, nullable=True)       # 1-5
+    market_impact = Column(String(200), nullable=True)
+    source_url    = Column(String(500), nullable=True)
+    is_manual     = Column(Boolean, default=False)
+    created_at    = Column(DateTime, default=datetime.utcnow)
+
+    __table_args__ = (
+        Index("ix_geopolitical_events_date",     "date"),
+        Index("ix_geopolitical_events_severity", "severity"),
+        Index("ix_geopolitical_events_created",  "created_at"),
+    )
+
+    def __repr__(self):
+        return f"<GeopoliticalEvent '{self.title[:50]}' sev={self.severity}>"
 
 
 # ── Engine y Session factory ──────────────────────────────────────────────────

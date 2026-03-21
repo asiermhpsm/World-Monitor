@@ -10,6 +10,7 @@ from collectors.yahoo_collector import YahooCollector
 from collectors.worldbank_collector import WorldBankCollector
 from collectors.europe_collector import EuropeCollector
 from collectors.coingecko_collector import CoinGeckoCollector
+from collectors.news_collector import NewsCollector
 
 __all__ = [
     "BaseCollector",
@@ -18,4 +19,5 @@ __all__ = [
     "WorldBankCollector",
     "EuropeCollector",
     "CoinGeckoCollector",
+    "NewsCollector",
 ]
