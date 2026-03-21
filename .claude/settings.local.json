@@ -30,7 +30,10 @@
       "Bash(venvScriptspython.exe -c \":*)",
       "Bash(\"./venv/Scripts/python.exe\" -c \":*)",
       "Bash(venv/Scripts/python.exe -c \"from modules.module_05_markets import render_module_5, register_callbacks_module_5; print\\(''Import OK''\\)\")",
-      "Bash(timeout 8 venv/Scripts/python.exe app.py)"
+      "Bash(timeout 8 venv/Scripts/python.exe app.py)",
+      "Bash(venv/Scripts/python.exe -c \"from modules.module_04_monetary_policy import render_module_4, register_callbacks_module_4; from modules.data_helpers import calculate_mortgage_payment; print\\(''Imports OK''\\); c = calculate_mortgage_payment\\(150000, 20, 3.5, 0.99\\); print\\(f''Mortgage test: {c} EUR/mes''\\)\")",
+      "Bash(venv/Scripts/python.exe -c \"import app; print\\(''app.py loaded OK''\\)\")",
+      "Bash(venv/Scripts/python.exe -m py_compile modules/module_04_monetary_policy.py)"
     ]
   }
 }

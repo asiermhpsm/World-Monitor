@@ -302,6 +302,38 @@ def get_db_last_update() -> Optional[datetime]:
 
 # ── Poder adquisitivo ──────────────────────────────────────────────────────────
 
+def calculate_mortgage_payment(
+    principal: float,
+    years: int,
+    euribor_rate: float,
+    spread: float,
+) -> float:
+    """
+    Calcula la cuota mensual de una hipoteca variable (amortizacion francesa).
+
+    Parametros:
+      principal   : capital pendiente en euros
+      years       : años restantes de hipoteca
+      euribor_rate: EURIBOR actual en porcentaje (ej. 3.5 para 3.5%)
+      spread      : diferencial en porcentaje (ej. 0.99 para +0.99%)
+
+    Devuelve la cuota mensual en euros.
+    Fórmula: cuota = P × (r × (1+r)^n) / ((1+r)^n − 1)
+    donde r = tipo_anual / 12, n = años × 12
+    """
+    tipo_anual = (euribor_rate + spread) / 100.0
+    if tipo_anual <= 0:
+        # Tipo negativo o cero: amortización lineal simple
+        n = years * 12
+        return round(principal / n, 2) if n > 0 else 0.0
+    r = tipo_anual / 12.0
+    n = years * 12
+    if n <= 0:
+        return 0.0
+    cuota = principal * (r * (1 + r) ** n) / ((1 + r) ** n - 1)
+    return round(cuota, 2)
+
+
 def calculate_real_purchasing_power(
     amount: float,
     start_date: str,
