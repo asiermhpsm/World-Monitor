@@ -1,16 +1,223 @@
 """
 World Monitor — Punto de entrada principal.
-Arranca Dash con tema oscuro, sidebar de navegación y área de contenido.
+Layout definitivo: header fijo 56px + sidebar 240px + área de contenido.
+Tema visual Bloomberg/terminal financiero.
 """
+
+import atexit
+import logging
+import sqlite3
+from datetime import datetime
 
 import dash
 import dash_bootstrap_components as dbc
-from dash import Input, Output, dcc, html
-from datetime import datetime
+from dash import ALL, Input, Output, State, ctx, dcc, html, no_update
 
-from config import DASH_DEBUG, DASH_HOST, DASH_PORT, MODULES, COLORS
+from config import COLORS, DASH_DEBUG, DASH_HOST, DASH_PORT, MODULE_BY_N, MODULES
+from components.scheduler_status import (
+    build_alerts_bar,
+    build_scheduler_panel,
+    render_alerts_bar,
+    render_global_stats,
+    render_status_table,
+)
 
-# ── Inicialización de la app ──────────────────────────────────────────────────
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+)
+logger = logging.getLogger(__name__)
+
+
+# ── Scheduler ─────────────────────────────────────────────────────────────────
+
+scheduler = None
+
+def start_scheduler():
+    global scheduler
+    try:
+        from scheduler.scheduler import DashboardScheduler
+        scheduler = DashboardScheduler()
+        scheduler.start()
+        logger.info("Scheduler iniciado correctamente")
+    except Exception as e:
+        logger.warning("Scheduler no pudo arrancar: %s", e)
+        scheduler = None
+
+def stop_scheduler():
+    global scheduler
+    if scheduler is not None:
+        try:
+            scheduler.stop()
+        except Exception:
+            pass
+
+atexit.register(stop_scheduler)
+start_scheduler()
+
+
+# ── AlertManager ──────────────────────────────────────────────────────────────
+
+alert_manager = None
+try:
+    from alerts.alert_manager import AlertManager
+    alert_manager = AlertManager()
+except Exception as e:
+    logger.warning("AlertManager no disponible: %s", e)
+
+
+# ── Helpers ───────────────────────────────────────────────────────────────────
+
+def _get_db_last_updated() -> str:
+    """Devuelve la fecha de la última inserción en time_series."""
+    try:
+        from config import DB_PATH
+        con = sqlite3.connect(str(DB_PATH))
+        row = con.execute(
+            "SELECT MAX(timestamp) FROM time_series"
+        ).fetchone()
+        con.close()
+        if row and row[0]:
+            ts = row[0][:19]  # "2026-03-21 12:34:56"
+            return ts.replace("T", " ")
+    except Exception:
+        pass
+    return "—"
+
+
+def _get_db_record_count() -> int:
+    """Cuenta los registros aproximados relevantes para un módulo."""
+    # Heurística: número total de registros en time_series
+    try:
+        from config import DB_PATH
+        con = sqlite3.connect(str(DB_PATH))
+        n = con.execute("SELECT COUNT(*) FROM time_series").fetchone()[0]
+        con.close()
+        return n
+    except Exception:
+        return 0
+
+
+# ── Sidebar ───────────────────────────────────────────────────────────────────
+
+def build_sidebar():
+    sections: dict[str, list] = {}
+    for mod in MODULES:
+        sec = mod.get("section", "OTROS")
+        sections.setdefault(sec, []).append(mod)
+
+    section_order = ["MERCADOS", "MACRO", "RIESGO", "TENDENCIAS", "HERRAMIENTAS"]
+
+    nav_items = []
+    for i, sec in enumerate(section_order):
+        if sec not in sections:
+            continue
+        if i > 0:
+            nav_items.append(html.Hr(className="sidebar-divider"))
+        nav_items.append(html.Div(sec, className="sidebar-section-label"))
+        for mod in sections[sec]:
+            nav_items.append(
+                dbc.NavLink(
+                    [
+                        html.Span(mod["emoji"], style={"fontSize": "0.9em", "flexShrink": "0"}),
+                        html.Span(mod["label"], style={"overflow": "hidden", "textOverflow": "ellipsis"}),
+                    ],
+                    href=mod["path"],
+                    active="exact",
+                    className="sidebar-link",
+                    id=f"nav-{mod['id']}",
+                )
+            )
+
+    last_updated = _get_db_last_updated()
+
+    return html.Div(
+        [
+            # Zona scrolleable con los links
+            html.Div(nav_items, className="sidebar-scroll"),
+            # Footer fijo
+            html.Div(
+                [
+                    html.Div("World Monitor v0.1.0", style={"marginBottom": "2px"}),
+                    html.Div(
+                        f"BD: {last_updated}",
+                        id="sidebar-db-updated",
+                        style={"color": COLORS["text_label"]},
+                    ),
+                ],
+                className="sidebar-footer",
+            ),
+        ],
+        id="sidebar",
+    )
+
+
+# ── Header ────────────────────────────────────────────────────────────────────
+
+def build_header():
+    # Semáforo global de riesgo (placeholder)
+    risk_semaphore = html.Div(
+        [
+            html.Div(className="semaphore-dot gray", id="risk-dot"),
+            html.Span("Calculando...", id="risk-label",
+                      style={"fontSize": "0.7rem", "color": COLORS["text_muted"]}),
+        ],
+        className="risk-semaphore",
+        title="Semáforo global de riesgo",
+    )
+
+    # Indicador scheduler
+    scheduler_indicator = html.Div(
+        [
+            html.Div(
+                className="pulse-dot" if scheduler is not None else "pulse-dot inactive",
+                id="scheduler-dot",
+            ),
+            html.Span(
+                "Scheduler activo" if scheduler is not None else "Sin scheduler",
+                id="scheduler-status-label",
+                style={"fontSize": "0.7rem", "color": COLORS["text_muted"]},
+            ),
+        ],
+        className="scheduler-indicator",
+    )
+
+    # Badge de alertas
+    alert_badge = html.Div(
+        [
+            html.Span("Alertas", style={"fontSize": "0.7rem", "color": COLORS["text_muted"]}),
+            html.Span("0", id="alert-count-badge", className="badge-num zero"),
+        ],
+        className="alert-count-badge",
+        title="Alertas activas no leídas",
+    )
+
+    return html.Div(
+        [
+            # Izquierda: logo
+            html.Div(
+                [
+                    html.Span("🌍", style={"fontSize": "1.1rem"}),
+                    html.Span("WORLD MONITOR", className="header-logo-text"),
+                ],
+                className="header-logo",
+            ),
+            # Centro: reloj
+            html.Div(
+                id="header-datetime",
+                className="header-datetime",
+            ),
+            # Derecha: semáforo + scheduler + alertas
+            html.Div(
+                [risk_semaphore, scheduler_indicator, alert_badge],
+                className="header-right",
+            ),
+        ],
+        id="app-header",
+    )
+
+
+# ── Layout principal ──────────────────────────────────────────────────────────
 
 app = dash.Dash(
     __name__,
@@ -21,284 +228,281 @@ app = dash.Dash(
 )
 server = app.server
 
-
-# ── Sidebar ───────────────────────────────────────────────────────────────────
-
-def build_sidebar():
-    nav_links = []
-    for mod in MODULES:
-        nav_links.append(
-            dbc.NavLink(
-                mod["label"],
-                href=mod["path"],
-                active="exact",
-                className="sidebar-link",
-                style={
-                    "fontSize": "0.78rem",
-                    "padding": "6px 16px",
-                    "color": COLORS["text_muted"],
-                    "borderLeft": f"2px solid transparent",
-                    "letterSpacing": "0.02em",
-                },
-            )
-        )
-
-    return html.Div(
-        [
-            # Logo / Título sidebar
-            html.Div(
-                [
-                    html.Span("◈", style={"color": COLORS["accent"], "fontSize": "1.1rem"}),
-                    html.Span(
-                        " WORLD MONITOR",
-                        style={
-                            "fontWeight": "700",
-                            "fontSize": "0.85rem",
-                            "letterSpacing": "0.12em",
-                            "color": COLORS["text"],
-                        },
-                    ),
-                ],
-                style={
-                    "padding": "20px 16px 12px",
-                    "borderBottom": f"1px solid {COLORS['border']}",
-                    "marginBottom": "8px",
-                },
-            ),
-            # Navegación
-            dbc.Nav(
-                nav_links,
-                vertical=True,
-                pills=False,
-            ),
-        ],
-        style={
-            "width": "220px",
-            "minWidth": "220px",
-            "height": "100vh",
-            "position": "fixed",
-            "top": 0,
-            "left": 0,
-            "backgroundColor": COLORS["card_bg"],
-            "borderRight": f"1px solid {COLORS['border']}",
-            "overflowY": "auto",
-            "zIndex": 100,
-        },
-        id="sidebar",
-    )
-
-
-# ── Header ────────────────────────────────────────────────────────────────────
-
-def build_header():
-    return html.Div(
-        [
-            html.Div(
-                [
-                    html.Span(
-                        "WORLD MONITOR",
-                        style={
-                            "fontWeight": "700",
-                            "fontSize": "1.05rem",
-                            "letterSpacing": "0.18em",
-                            "color": COLORS["text"],
-                        },
-                    ),
-                    html.Span(
-                        " · Dashboard Financiero Global",
-                        style={
-                            "fontSize": "0.8rem",
-                            "color": COLORS["text_muted"],
-                            "marginLeft": "8px",
-                        },
-                    ),
-                ]
-            ),
-            html.Div(
-                id="header-datetime",
-                style={
-                    "fontSize": "0.78rem",
-                    "color": COLORS["accent"],
-                    "fontFamily": "monospace",
-                },
-            ),
-        ],
-        style={
-            "display": "flex",
-            "justifyContent": "space-between",
-            "alignItems": "center",
-            "padding": "10px 24px",
-            "backgroundColor": COLORS["card_bg"],
-            "borderBottom": f"1px solid {COLORS['border']}",
-            "position": "fixed",
-            "top": 0,
-            "left": "220px",
-            "right": 0,
-            "zIndex": 99,
-            "height": "46px",
-        },
-    )
-
-
-# ── Welcome screen ────────────────────────────────────────────────────────────
-
-welcome_layout = html.Div(
-    [
-        html.Div(
-            [
-                html.H1(
-                    "◈ WORLD MONITOR",
-                    style={
-                        "fontWeight": "700",
-                        "letterSpacing": "0.2em",
-                        "color": COLORS["accent"],
-                        "marginBottom": "8px",
-                        "fontSize": "2.2rem",
-                    },
-                ),
-                html.P(
-                    "Dashboard de monitorización económica y financiera global",
-                    style={"color": COLORS["text_muted"], "marginBottom": "40px", "fontSize": "1rem"},
-                ),
-                # Estado de la base de datos
-                dbc.Alert(
-                    [
-                        html.I(className="bi bi-database-check me-2"),
-                        "Base de datos inicializada. Selecciona un módulo en el sidebar para comenzar.",
-                    ],
-                    color="info",
-                    style={"maxWidth": "600px", "fontSize": "0.85rem"},
-                ),
-                # Grid de módulos
-                html.H6(
-                    "MÓDULOS DISPONIBLES",
-                    style={
-                        "color": COLORS["text_muted"],
-                        "letterSpacing": "0.12em",
-                        "fontSize": "0.72rem",
-                        "marginTop": "40px",
-                        "marginBottom": "16px",
-                    },
-                ),
-                dbc.Row(
-                    [
-                        dbc.Col(
-                            dbc.Card(
-                                dbc.CardBody(
-                                    [
-                                        html.P(
-                                            mod["label"],
-                                            style={
-                                                "fontSize": "0.75rem",
-                                                "color": COLORS["text"],
-                                                "marginBottom": 0,
-                                            },
-                                        )
-                                    ]
-                                ),
-                                style={
-                                    "backgroundColor": COLORS["card_bg"],
-                                    "border": f"1px solid {COLORS['border']}",
-                                    "marginBottom": "8px",
-                                    "cursor": "pointer",
-                                },
-                            ),
-                            width=4,
-                        )
-                        for mod in MODULES
-                    ],
-                    style={"maxWidth": "820px"},
-                ),
-            ],
-            style={
-                "padding": "48px 24px",
-                "maxWidth": "860px",
-            },
-        )
-    ]
-)
-
-
-# ── Layout principal ──────────────────────────────────────────────────────────
-
 app.layout = html.Div(
     [
         dcc.Location(id="url", refresh=False),
-        dcc.Interval(id="clock-interval", interval=1000, n_intervals=0),   # Reloj cada segundo
-        build_sidebar(),
+        dcc.Interval(id="clock-interval",          interval=1_000,  n_intervals=0),
+        dcc.Interval(id="header-stats-interval",   interval=30_000, n_intervals=0),
+
+        # Header fijo
         build_header(),
-        # Área de contenido principal
+
+        # Sidebar fijo
+        build_sidebar(),
+
+        # Barra de alertas (sticky debajo del header, sólo en zona de contenido)
         html.Div(
-            id="page-content",
-            style={
-                "marginLeft": "220px",
-                "marginTop": "46px",
-                "backgroundColor": COLORS["background"],
-                "minHeight": "calc(100vh - 46px)",
-                "padding": "0",
-            },
+            build_alerts_bar(),
+            id="alerts-wrapper",
         ),
+
+        # Área de contenido principal
+        html.Div(id="page-content"),
     ],
     style={
         "backgroundColor": COLORS["background"],
-        "fontFamily": "'Inter', 'Segoe UI', sans-serif",
+        "fontFamily": "'Inter', 'Segoe UI', system-ui, sans-serif",
         "color": COLORS["text"],
     },
 )
 
 
-# ── Callbacks ─────────────────────────────────────────────────────────────────
+# ── Módulo placeholder ────────────────────────────────────────────────────────
 
-@app.callback(Output("header-datetime", "children"), Input("clock-interval", "n_intervals"))
-def update_clock(_):
-    now = datetime.now()
-    return now.strftime("%Y-%m-%d  %H:%M:%S")
-
-
-@app.callback(Output("page-content", "children"), Input("url", "pathname"))
-def render_page(pathname):
-    """Routing: carga el módulo correspondiente a la URL."""
-    if pathname is None or pathname == "/":
-        return welcome_layout
-
-    # Busca el módulo por path
-    module_map = {mod["path"]: mod["id"] for mod in MODULES}
-    mod_id = module_map.get(pathname)
-
-    if mod_id is None:
+def build_module_placeholder(module_n: int) -> html.Div:
+    mod = MODULE_BY_N.get(module_n)
+    if mod is None:
         return html.Div(
-            [
-                html.H3("404 — Módulo no encontrado", style={"color": COLORS["text_muted"]}),
-                dcc.Link("← Volver al inicio", href="/"),
-            ],
-            style={"padding": "48px 24px"},
+            html.H4("Módulo no encontrado", style={"color": COLORS["text_muted"]}),
+            id="page-content",
+            style={"padding": "24px"},
         )
 
-    # Placeholder para módulos aún no implementados
-    mod_label = next((m["label"] for m in MODULES if m["id"] == mod_id), mod_id)
+    rec_count = _get_db_record_count()
+
     return html.Div(
         [
-            html.H4(
-                mod_label,
-                style={
-                    "color": COLORS["accent"],
-                    "letterSpacing": "0.08em",
-                    "marginBottom": "24px",
-                    "borderBottom": f"1px solid {COLORS['border']}",
-                    "paddingBottom": "12px",
-                },
-            ),
-            dbc.Alert(
+            # Cabecera del módulo
+            html.Div(
                 [
-                    html.I(className="bi bi-tools me-2"),
-                    f"Módulo en construcción. Se implementará en una sesión futura.",
+                    html.Div(
+                        f"{mod['emoji']} {mod['label']}",
+                        className="module-title",
+                    ),
+                    html.Div(
+                        f"Módulo {module_n:02d} · En construcción — Los datos están cargándose",
+                        className="module-subtitle",
+                    ),
+                    html.Div(
+                        [
+                            html.Span("🔧 ", style={"fontSize": "0.85rem"}),
+                            html.Span(
+                                "Módulo pendiente de implementación en sesión futura.",
+                                style={"fontSize": "0.75rem"},
+                            ),
+                        ],
+                        className="placeholder-badge",
+                    ),
+                ]
+            ),
+
+            # Stats rápidas
+            dbc.Row(
+                [
+                    dbc.Col(
+                        html.Div(
+                            [
+                                html.Div("REGISTROS EN BD", className="metric-card-title"),
+                                html.Div(
+                                    f"{rec_count:,}",
+                                    className="metric-card-value",
+                                    style={"fontSize": "1.8rem"},
+                                ),
+                            ],
+                            className="metric-card",
+                        ),
+                        width=3,
+                    ),
+                    dbc.Col(
+                        html.Div(
+                            [
+                                html.Div("MÓDULO", className="metric-card-title"),
+                                html.Div(
+                                    f"#{module_n:02d}",
+                                    className="metric-card-value",
+                                    style={"color": COLORS["accent"], "fontSize": "1.8rem"},
+                                ),
+                            ],
+                            className="metric-card",
+                        ),
+                        width=3,
+                    ),
+                    dbc.Col(
+                        html.Div(
+                            [
+                                html.Div("ESTADO", className="metric-card-title"),
+                                html.Div(
+                                    "En construcción",
+                                    className="metric-card-value",
+                                    style={"color": COLORS["yellow"], "fontSize": "0.9rem", "paddingTop": "6px"},
+                                ),
+                            ],
+                            className="metric-card",
+                        ),
+                        width=3,
+                    ),
                 ],
-                color="secondary",
-                style={"fontSize": "0.85rem", "maxWidth": "480px"},
+                className="g-3 mb-4",
+            ),
+
+            # Panel del scheduler
+            html.Div(
+                build_scheduler_panel(),
+                style={"maxWidth": "900px"},
             ),
         ],
-        style={"padding": "32px 24px"},
+        className="module-placeholder",
     )
+
+
+# ── Callbacks ─────────────────────────────────────────────────────────────────
+
+@app.callback(
+    Output("header-datetime", "children"),
+    Input("clock-interval", "n_intervals"),
+)
+def update_clock(_):
+    now = datetime.now()
+    days_es = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"]
+    months_es = [
+        "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+        "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
+    ]
+    day_name = days_es[now.weekday()]
+    month_name = months_es[now.month - 1]
+    return f"{day_name}, {now.day} {month_name} {now.year} — {now.strftime('%H:%M:%S')} UTC"
+
+
+@app.callback(
+    Output("alert-count-badge", "children"),
+    Output("alert-count-badge", "className"),
+    Input("header-stats-interval", "n_intervals"),
+)
+def update_alert_count(_):
+    if alert_manager is None:
+        return "0", "badge-num zero"
+    try:
+        alerts = alert_manager.get_active_alerts(hours=24)
+        n = len(alerts)
+        cls = "badge-num" if n > 0 else "badge-num zero"
+        return str(n), cls
+    except Exception:
+        return "0", "badge-num zero"
+
+
+@app.callback(
+    Output("page-content", "children"),
+    Input("url", "pathname"),
+)
+def render_page(pathname):
+    if pathname is None or pathname == "/" or pathname == "":
+        # Redirigir al módulo 1
+        return dcc.Location(id="redirect", pathname="/module/1", refresh=True)
+
+    if pathname.startswith("/module/"):
+        try:
+            n = int(pathname.split("/module/")[1])
+        except (ValueError, IndexError):
+            return html.Div(
+                [
+                    html.H4("404 — Módulo no encontrado",
+                            style={"color": COLORS["text_muted"]}),
+                    dcc.Link("← Volver al inicio", href="/module/1"),
+                ],
+                style={"padding": "48px 24px"},
+            )
+        if n not in MODULE_BY_N:
+            return html.Div(
+                [
+                    html.H4(f"Módulo {n} no existe",
+                            style={"color": COLORS["text_muted"]}),
+                    dcc.Link("← Volver al inicio", href="/module/1"),
+                ],
+                style={"padding": "48px 24px"},
+            )
+        return build_module_placeholder(n)
+
+    # Cualquier otra ruta → 404
+    return html.Div(
+        [
+            html.H4("404 — Página no encontrada",
+                    style={"color": COLORS["text_muted"]}),
+            dcc.Link("← Ir al dashboard", href="/module/1"),
+        ],
+        style={"padding": "48px 24px"},
+    )
+
+
+# ── Callback: tabla de estado del scheduler ───────────────────────────────────
+
+@app.callback(
+    Output("scheduler-status-table", "children"),
+    Output("scheduler-global-stats", "children"),
+    Input("scheduler-refresh-interval", "n_intervals"),
+    Input({"type": "run-collector-btn", "collector": ALL}, "n_clicks"),
+    prevent_initial_call=False,
+)
+def update_scheduler_panel(_n_intervals, _btn_clicks):
+    triggered = ctx.triggered_id
+    if (
+        triggered is not None
+        and isinstance(triggered, dict)
+        and triggered.get("type") == "run-collector-btn"
+    ):
+        collector_key = triggered["collector"]
+        if scheduler is not None:
+            scheduler.run_collector_now(collector_key)
+
+    if scheduler is None:
+        table = dbc.Alert(
+            "Scheduler no disponible. Sin actualización automática.",
+            color="warning",
+            style={"fontSize": "0.82rem"},
+        )
+        return table, html.Div()
+
+    try:
+        status    = scheduler.get_status()
+        db_stats  = scheduler.get_db_stats()
+        log_stats = scheduler.get_log_stats_24h()
+        return render_status_table(status), render_global_stats(status, db_stats, log_stats)
+    except Exception as e:
+        logger.warning("Error actualizando panel scheduler: %s", e)
+        err = dbc.Alert(f"Error: {e}", color="danger", style={"fontSize": "0.82rem"})
+        return err, html.Div()
+
+
+# ── Callback: barra de alertas ────────────────────────────────────────────────
+
+@app.callback(
+    Output("alerts-bar-content", "children"),
+    Input("alerts-refresh-interval", "n_intervals"),
+    Input({"type": "dismiss-alert-btn", "alert_id": ALL}, "n_clicks"),
+    prevent_initial_call=False,
+)
+def update_alerts_bar(n_intervals, dismiss_clicks):
+    triggered = ctx.triggered_id
+    if (
+        triggered is not None
+        and isinstance(triggered, dict)
+        and triggered.get("type") == "dismiss-alert-btn"
+    ):
+        alert_id = triggered["alert_id"]
+        if alert_manager is not None and alert_id:
+            try:
+                alert_manager.mark_as_read(int(alert_id))
+            except Exception:
+                pass
+
+    if alert_manager is None:
+        return html.Div()
+
+    try:
+        active_alerts = alert_manager.get_active_alerts(hours=24)
+        return render_alerts_bar(active_alerts)
+    except Exception as e:
+        logger.warning("Error actualizando barra de alertas: %s", e)
+        return html.Div()
 
 
 # ── Arranque ──────────────────────────────────────────────────────────────────

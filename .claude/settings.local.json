@@ -15,7 +15,17 @@
       "Bash(python scripts/test_europe.py)",
       "Bash(python scripts/test_coingecko.py)",
       "Bash(python database/init_db.py)",
-      "Bash(python scripts/test_news.py)"
+      "Bash(python scripts/test_news.py)",
+      "Bash(venv/Scripts/python.exe -c \":*)",
+      "Bash(venv/Scripts/python.exe scripts/test_scheduler.py)",
+      "Bash(venv/Scripts/python.exe -m py_compile app.py components/common.py components/chart_config.py assets/custom.css)",
+      "Bash(echo \"Exit: $?\")",
+      "Bash(venv/Scripts/python.exe -m py_compile app.py components/common.py components/chart_config.py)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://127.0.0.1:8050/_dash-layout)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://127.0.0.1:8050/assets/custom.css)",
+      "Bash(taskkill /F /IM python.exe /FI \"WINDOWTITLE eq *app*\")",
+      "Bash(pkill -f \"python.*app.py\")",
+      "Bash(taskkill //F //IM python.exe)"
     ]
   }
 }

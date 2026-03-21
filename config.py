@@ -35,18 +35,20 @@ DASH_DEBUG = os.getenv("DASH_DEBUG", "false").lower() == "true"
 # ── Colores del tema ──────────────────────────────────────────────────────────
 
 COLORS = {
-    "background": "#0a0a0a",
-    "card_bg": "#1a1a1a",
-    "border": "#2a2a2a",
-    "text": "#e0e0e0",
-    "text_muted": "#888888",
-    "accent": "#00b4d8",
-    # Semáforo de 5 niveles (consistente en todos los módulos)
-    "green": "#00c853",
-    "green_yellow": "#76ff03",
-    "yellow": "#ffd600",
-    "orange": "#ff6d00",
-    "red": "#d50000",
+    "background":  "#0a0e1a",
+    "card_bg":     "#111827",
+    "border":      "#1f2937",
+    "border_mid":  "#374151",
+    "text":        "#e5e7eb",
+    "text_muted":  "#9ca3af",
+    "text_label":  "#6b7280",
+    "accent":      "#3b82f6",
+    # Semáforo de 5 niveles
+    "green":       "#10b981",
+    "green_yellow":"#84cc16",
+    "yellow":      "#f59e0b",
+    "orange":      "#f97316",
+    "red":         "#ef4444",
 }
 
 PLOTLY_THEME = "plotly_dark"
@@ -93,21 +95,24 @@ COUNTRY_NAMES = {
 # ── Módulos del dashboard (sidebar) ──────────────────────────────────────────
 
 MODULES = [
-    {"id": "m01", "label": "01 · Estado Global",               "path": "/"},
-    {"id": "m02", "label": "02 · Macro Global",                "path": "/macro"},
-    {"id": "m03", "label": "03 · Inflación",                   "path": "/inflacion"},
-    {"id": "m04", "label": "04 · Política Monetaria",          "path": "/monetaria"},
-    {"id": "m05", "label": "05 · Mercados Financieros",        "path": "/mercados"},
-    {"id": "m06", "label": "06 · Mercado Laboral",             "path": "/laboral"},
-    {"id": "m07", "label": "07 · Energía y Materias Primas",   "path": "/energia"},
-    {"id": "m08", "label": "08 · Deuda y Sostenibilidad",      "path": "/deuda"},
-    {"id": "m09", "label": "09 · Riesgo Sistémico",            "path": "/riesgo"},
-    {"id": "m10", "label": "10 · Geopolítica",                 "path": "/geopolitica"},
-    {"id": "m11", "label": "11 · Indicadores Adelantados",     "path": "/adelantados"},
-    {"id": "m12", "label": "12 · China",                       "path": "/china"},
-    {"id": "m13", "label": "13 · Demografía",                  "path": "/demografia"},
-    {"id": "m14", "label": "14 · Histórico",                   "path": "/historico"},
-    {"id": "m15", "label": "15 · Motor IA",                    "path": "/ia"},
-    {"id": "m16", "label": "16 · Análisis de Mercados",        "path": "/analisis"},
-    {"id": "m17", "label": "17 · Personalización",             "path": "/config"},
+    {"id": "m01", "n": 1,  "emoji": "📊", "label": "Estado Global",          "path": "/module/1",  "section": "MERCADOS"},
+    {"id": "m05", "n": 5,  "emoji": "📈", "label": "Mercados Financieros",   "path": "/module/5",  "section": "MERCADOS"},
+    {"id": "m16", "n": 16, "emoji": "💹", "label": "Análisis de Mercados",   "path": "/module/16", "section": "MERCADOS"},
+    {"id": "m02", "n": 2,  "emoji": "🌍", "label": "Macro Global",           "path": "/module/2",  "section": "MACRO"},
+    {"id": "m03", "n": 3,  "emoji": "📉", "label": "Inflación",              "path": "/module/3",  "section": "MACRO"},
+    {"id": "m04", "n": 4,  "emoji": "🏦", "label": "Política Monetaria",     "path": "/module/4",  "section": "MACRO"},
+    {"id": "m06", "n": 6,  "emoji": "👷", "label": "Mercado Laboral",        "path": "/module/6",  "section": "MACRO"},
+    {"id": "m07", "n": 7,  "emoji": "⚡", "label": "Energía y Mat. Primas",  "path": "/module/7",  "section": "MACRO"},
+    {"id": "m08", "n": 8,  "emoji": "💰", "label": "Deuda y Fiscalidad",     "path": "/module/8",  "section": "MACRO"},
+    {"id": "m09", "n": 9,  "emoji": "🏛️", "label": "Sistema Financiero",     "path": "/module/9",  "section": "RIESGO"},
+    {"id": "m10", "n": 10, "emoji": "🌐", "label": "Geopolítica",            "path": "/module/10", "section": "RIESGO"},
+    {"id": "m11", "n": 11, "emoji": "⚠️", "label": "Señales de Alerta",      "path": "/module/11", "section": "RIESGO"},
+    {"id": "m12", "n": 12, "emoji": "🇨🇳", "label": "China",                  "path": "/module/12", "section": "RIESGO"},
+    {"id": "m13", "n": 13, "emoji": "👥", "label": "Demografía",             "path": "/module/13", "section": "TENDENCIAS"},
+    {"id": "m14", "n": 14, "emoji": "🕐", "label": "Histórico y Comparativas","path": "/module/14","section": "HERRAMIENTAS"},
+    {"id": "m15", "n": 15, "emoji": "🤖", "label": "Análisis IA",            "path": "/module/15", "section": "HERRAMIENTAS"},
+    {"id": "m17", "n": 17, "emoji": "⚙️", "label": "Configuración",          "path": "/module/17", "section": "HERRAMIENTAS"},
 ]
+
+# Lookup rápido número → módulo
+MODULE_BY_N = {m["n"]: m for m in MODULES}
