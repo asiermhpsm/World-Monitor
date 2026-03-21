@@ -28,7 +28,9 @@
       "Bash(taskkill //F //IM python.exe)",
       "Bash(timeout 12 venv/Scripts/python.exe app.py)",
       "Bash(venvScriptspython.exe -c \":*)",
-      "Bash(\"./venv/Scripts/python.exe\" -c \":*)"
+      "Bash(\"./venv/Scripts/python.exe\" -c \":*)",
+      "Bash(venv/Scripts/python.exe -c \"from modules.module_05_markets import render_module_5, register_callbacks_module_5; print\\(''Import OK''\\)\")",
+      "Bash(timeout 8 venv/Scripts/python.exe app.py)"
     ]
   }
 }

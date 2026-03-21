@@ -15,6 +15,7 @@ from dash import ALL, Input, Output, State, ctx, dcc, html, no_update
 
 from config import COLORS, DASH_DEBUG, DASH_HOST, DASH_PORT, MODULE_BY_N, MODULES
 from modules.module_01_global_status import register_callbacks_module_1, render_module_1
+from modules.module_05_markets import register_callbacks_module_5, render_module_5
 from components.scheduler_status import (
     build_alerts_bar,
     build_scheduler_panel,
@@ -423,6 +424,8 @@ def render_page(pathname):
             )
         if n == 1:
             return render_module_1()
+        if n == 5:
+            return render_module_5()
         return build_module_placeholder(n)
 
     # Cualquier otra ruta → 404
@@ -511,6 +514,7 @@ def update_alerts_bar(n_intervals, dismiss_clicks):
 # ── Registro de callbacks de modulos ──────────────────────────────────────────
 
 register_callbacks_module_1(app)
+register_callbacks_module_5(app)
 
 
 # ── Arranque ──────────────────────────────────────────────────────────────────
