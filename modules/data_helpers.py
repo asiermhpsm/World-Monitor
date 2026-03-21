@@ -300,6 +300,129 @@ def get_db_last_update() -> Optional[datetime]:
         return None
 
 
+# ── World Bank helpers ─────────────────────────────────────────────────────────
+
+# Mapeo indicador corto → columna en la comparativa global
+_WB_SHORT_TO_LABEL = {
+    "gdp_growth":    "Crecimiento PIB (%)",
+    "gdp_pc_ppp":    "PIB per cápita PPP (USD)",
+    "cpi_inflation": "Inflación (%)",
+    "unemployment":  "Desempleo (%)",
+    "youth_unemp":   "Desempleo juvenil (%)",
+    "gov_debt_pct":  "Deuda/PIB (%)",
+    "fiscal_balance":"Déficit fiscal (% PIB)",
+    "curr_account":  "Cuenta corriente (% PIB)",
+    "trade_pct":     "Apertura comercial (% PIB)",
+    "fertility":     "Tasa de fertilidad",
+    "pop_growth":    "Crecimiento población (%)",
+    "old_dep_ratio": "Ratio dependencia ancianos",
+    "gini":          "Índice de Gini",
+    "rd_spending":   "Gasto I+D (% PIB)",
+    "internet_users":"Usuarios internet (%)",
+    "gdp_nominal":   "PIB nominal (USD)",
+    "population":    "Población",
+    "reserves_usd":  "Reservas divisas (USD)",
+}
+
+
+def get_world_bank_indicator(
+    indicator_short_name: str,
+    countries: Optional[list] = None,
+    year: Optional[int] = None,
+) -> pd.DataFrame:
+    """
+    Devuelve un DataFrame con el valor de un indicador del Banco Mundial
+    para todos los países (o los especificados) en un año dado.
+
+    Columns: country_iso3, value, year
+    Si year=None, usa el último año disponible por país.
+    """
+    try:
+        with SessionLocal() as db:
+            # Buscar todos los series que coincidan con el patrón wb_{indicator_short_name}_%
+            pattern = f"wb_{indicator_short_name}_%"
+            from sqlalchemy import or_
+            rows_q = db.query(
+                TimeSeries.indicator_id,
+                TimeSeries.value,
+                TimeSeries.timestamp,
+            ).filter(
+                TimeSeries.indicator_id.like(pattern),
+                TimeSeries.source == "worldbank",
+            )
+            all_rows = rows_q.all()
+    except Exception as exc:
+        logger.debug("get_world_bank_indicator(%s): %s", indicator_short_name, exc)
+        return pd.DataFrame(columns=["country_iso3", "value", "year"])
+
+    if not all_rows:
+        return pd.DataFrame(columns=["country_iso3", "value", "year"])
+
+    prefix = f"wb_{indicator_short_name}_"
+
+    records = []
+    for row in all_rows:
+        iso3_raw = row.indicator_id[len(prefix):]
+        iso3 = iso3_raw.upper()
+        # Filtrar agregados regionales no útiles para mapa (WLD, EUU, etc.)
+        if iso3 in ("WLD", "EUU", "EMU", "EAP", "LAC", "SSA", "SAS", "MNA"):
+            continue
+        if countries and iso3 not in [c.upper() for c in countries]:
+            continue
+        if row.timestamp is None or row.value is None:
+            continue
+        yr = row.timestamp.year if hasattr(row.timestamp, "year") else None
+        if yr is None:
+            continue
+        records.append({"country_iso3": iso3, "value": float(row.value), "year": yr})
+
+    if not records:
+        return pd.DataFrame(columns=["country_iso3", "value", "year"])
+
+    df = pd.DataFrame(records)
+
+    if year is not None:
+        df = df[df["year"] == year]
+        if df.empty:
+            # Si no hay datos para ese año, buscar el más cercano anterior
+            all_years_df = pd.DataFrame(records)
+            closest_year = all_years_df[all_years_df["year"] <= year]["year"].max() if not all_years_df[all_years_df["year"] <= year].empty else all_years_df["year"].max()
+            df = all_years_df[all_years_df["year"] == closest_year] if not pd.isna(closest_year) else pd.DataFrame(columns=["country_iso3", "value", "year"])
+    else:
+        # Para cada país: último año con datos
+        df = df.sort_values("year", ascending=False).drop_duplicates(subset="country_iso3")
+
+    return df.reset_index(drop=True)
+
+
+def get_country_comparison(
+    indicator_short_names: list,
+    countries: Optional[list] = None,
+    year: Optional[int] = None,
+) -> pd.DataFrame:
+    """
+    Devuelve un DataFrame con múltiples indicadores en columnas y países en filas.
+    Columnas: country_iso3 + cada indicador. NaN si no hay dato.
+    """
+    result_df = None
+
+    for ind in indicator_short_names:
+        df_ind = get_world_bank_indicator(ind, countries=countries, year=year)
+        if df_ind.empty:
+            continue
+        df_ind = df_ind[["country_iso3", "value"]].rename(columns={"value": ind})
+        if result_df is None:
+            result_df = df_ind
+        else:
+            result_df = result_df.merge(df_ind, on="country_iso3", how="outer")
+
+    if result_df is None:
+        cols = ["country_iso3"] + indicator_short_names
+        return pd.DataFrame(columns=cols)
+
+    return result_df.reset_index(drop=True)
+
+
 # ── Poder adquisitivo ──────────────────────────────────────────────────────────
 
 def calculate_mortgage_payment(

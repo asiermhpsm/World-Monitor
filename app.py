@@ -15,6 +15,7 @@ from dash import ALL, Input, Output, State, ctx, dcc, html, no_update
 
 from config import COLORS, DASH_DEBUG, DASH_HOST, DASH_PORT, MODULE_BY_N, MODULES
 from modules.module_01_global_status import register_callbacks_module_1, render_module_1
+from modules.module_02_macro import register_callbacks_module_2, render_module_2
 from modules.module_03_inflation import register_callbacks_module_3, render_module_3
 from modules.module_04_monetary_policy import register_callbacks_module_4, render_module_4
 from modules.module_05_markets import register_callbacks_module_5, render_module_5
@@ -426,6 +427,8 @@ def render_page(pathname):
             )
         if n == 1:
             return render_module_1()
+        if n == 2:
+            return render_module_2()
         if n == 3:
             return render_module_3()
         if n == 4:
@@ -520,6 +523,7 @@ def update_alerts_bar(n_intervals, dismiss_clicks):
 # ── Registro de callbacks de modulos ──────────────────────────────────────────
 
 register_callbacks_module_1(app)
+register_callbacks_module_2(app)
 register_callbacks_module_3(app)
 register_callbacks_module_4(app)
 register_callbacks_module_5(app)
