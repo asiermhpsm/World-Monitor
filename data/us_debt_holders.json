@@ -1,0 +1,20 @@
+{
+  "last_updated": "2026-01-01",
+  "source": "US Treasury TIC Data",
+  "total_debt_trillion": 36.8,
+  "holders": {
+    "Federal Reserve": 4.5,
+    "Social Security Trust Fund": 2.8,
+    "Other US Government": 1.9,
+    "Japan": 1.08,
+    "China": 0.76,
+    "UK": 0.72,
+    "Luxembourg": 0.38,
+    "Cayman Islands": 0.35,
+    "Belgium": 0.32,
+    "Other Foreign": 3.8,
+    "US Public (otros)": 20.21
+  },
+  "china_2013_trillion": 1.3,
+  "china_note": "China ha reducido sus tenencias de deuda americana a la mitad desde 2013"
+}

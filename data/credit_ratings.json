@@ -1,0 +1,33 @@
+{
+  "last_updated": "2026-01-01",
+  "ratings": {
+    "USA": {"moodys": "Aaa", "sp": "AA+", "fitch": "AA+"},
+    "DEU": {"moodys": "Aaa", "sp": "AAA", "fitch": "AAA"},
+    "FRA": {"moodys": "Aa2", "sp": "AA-", "fitch": "AA-"},
+    "ESP": {"moodys": "Baa1", "sp": "A",   "fitch": "A-"},
+    "ITA": {"moodys": "Baa3", "sp": "BBB", "fitch": "BBB"},
+    "JPN": {"moodys": "A1",   "sp": "A+",  "fitch": "A"},
+    "CHN": {"moodys": "A1",   "sp": "A+",  "fitch": "A+"},
+    "GBR": {"moodys": "Aa3",  "sp": "AA",  "fitch": "AA-"},
+    "BRA": {"moodys": "Ba1",  "sp": "BB",  "fitch": "BB"},
+    "MEX": {"moodys": "Baa2", "sp": "BBB", "fitch": "BBB-"},
+    "GRC": {"moodys": "Ba1",  "sp": "BBB-","fitch": "BBB-"},
+    "PRT": {"moodys": "Baa2", "sp": "BBB+","fitch": "BBB+"},
+    "ARG": {"moodys": "Ca",   "sp": "CCC", "fitch": "CC"},
+    "TUR": {"moodys": "B3",   "sp": "B+",  "fitch": "BB-"},
+    "CAN": {"moodys": "Aaa",  "sp": "AAA", "fitch": "AA+"},
+    "AUS": {"moodys": "Aaa",  "sp": "AAA", "fitch": "AAA"},
+    "KOR": {"moodys": "Aa2",  "sp": "AA",  "fitch": "AA-"},
+    "NLD": {"moodys": "Aaa",  "sp": "AAA", "fitch": "AAA"},
+    "CHE": {"moodys": "Aaa",  "sp": "AAA", "fitch": "AAA"},
+    "IND": {"moodys": "Baa3", "sp": "BBB-","fitch": "BBB-"},
+    "POL": {"moodys": "A2",   "sp": "A-",  "fitch": "A-"},
+    "BEL": {"moodys": "Aa3",  "sp": "AA",  "fitch": "AA-"},
+    "AUT": {"moodys": "Aa1",  "sp": "AA+", "fitch": "AA+"},
+    "SWE": {"moodys": "Aaa",  "sp": "AAA", "fitch": "AAA"},
+    "NOR": {"moodys": "Aaa",  "sp": "AAA", "fitch": "AAA"},
+    "DNK": {"moodys": "Aaa",  "sp": "AAA", "fitch": "AAA"},
+    "FIN": {"moodys": "Aa1",  "sp": "AA+", "fitch": "AA+"},
+    "ZAF": {"moodys": "Ba2",  "sp": "BB-", "fitch": "BB-"}
+  }
+}

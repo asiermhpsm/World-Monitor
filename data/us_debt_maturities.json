@@ -1,0 +1,18 @@
+{
+  "last_updated": "2026-02-01",
+  "source": "US Treasury",
+  "total_debt_trillion": 36.8,
+  "maturities_by_year": {
+    "2026": 9.2,
+    "2027": 7.8,
+    "2028": 5.9,
+    "2029": 4.2,
+    "2030": 3.1,
+    "2031": 2.8,
+    "2032": 2.1,
+    "2033+": 1.7
+  },
+  "average_maturity_years": 5.8,
+  "average_coupon_pct": 2.7,
+  "current_market_rate_10y": 4.3
+}

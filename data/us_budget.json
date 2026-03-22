@@ -1,0 +1,16 @@
+{
+  "last_updated": "2026-01-01",
+  "fiscal_year": 2025,
+  "source": "Office of Management and Budget",
+  "total_spending_bn": 6750,
+  "categories": {
+    "Social Security": 1450,
+    "Medicare/Medicaid": 1680,
+    "Defense": 895,
+    "Interest on Debt": 1160,
+    "Other Mandatory": 780,
+    "Discretionary non-defense": 785
+  },
+  "total_revenue_bn": 4920,
+  "deficit_bn": 1830
+}

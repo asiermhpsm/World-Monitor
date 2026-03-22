@@ -36,7 +36,13 @@
       "Bash(venv/Scripts/python.exe -m py_compile modules/module_04_monetary_policy.py)",
       "Bash(venv/Scripts/python.exe -c \"from modules.module_02_macro import render_module_2, register_callbacks_module_2; print\\(''Import OK''\\)\")",
       "Bash(venv/Scripts/python.exe -c \"import app; print\\(''app.py OK''\\)\")",
-      "Bash(venv/Scripts/python -c \"import py_compile; py_compile.compile\\(''modules/module_07_energy.py'', doraise=True\\)\")"
+      "Bash(venv/Scripts/python -c \"import py_compile; py_compile.compile\\(''modules/module_07_energy.py'', doraise=True\\)\")",
+      "Bash(python -c \"from modules.module_08_debt import render_module_8, register_callbacks_module_8; print\\(''OK''\\)\")",
+      "Bash(python -c \"from modules.data_helpers import calculate_debt_sustainability, calculate_financial_repression_transfer; print\\(''OK''\\)\")",
+      "Bash(python -c \"import app; print\\(''app.py OK''\\)\")",
+      "Bash(python -c \"import app; print\\(''''app.py OK — all callbacks registered''''\\)\")",
+      "Bash(python -c \"from modules.module_08_debt import render_module_8, register_callbacks_module_8; print\\(''Import OK''\\)\")",
+      "Bash(timeout 15 python -c \":*)"
     ]
   }
 }

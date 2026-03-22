@@ -707,6 +707,138 @@ def calculate_oil_inflation_correlation(months: int = 60) -> Optional[dict]:
     }
 
 
+# ── Deuda y Sostenibilidad Fiscal (Módulo 8) ───────────────────────────────────
+
+def calculate_debt_sustainability(country_iso3: str) -> Optional[dict]:
+    """
+    Calcula la dinámica de sostenibilidad de la deuda para un país.
+
+    Ecuación: Δ(D/Y) = (r - g) × (D/Y) - pb
+    Donde:
+      r  = tipo de interés real
+      g  = tasa de crecimiento real del PIB
+      D/Y = ratio deuda/PIB
+      pb = superávit primario como % del PIB
+
+    Devuelve un dict con: r, g, r_minus_g, primary_balance,
+    delta_debt_gdp, debt_gdp, classification, interpretation.
+    Devuelve None si no hay datos suficientes.
+    """
+    iso3 = country_iso3.upper()
+    iso3_lower = iso3.lower()
+
+    # -- Deuda/PIB (World Bank: gov_debt_pct) --
+    df_debt = get_series(f"wb_gov_debt_pct_{iso3_lower}", days=365 * 5)
+    if df_debt.empty:
+        logger.debug("calculate_debt_sustainability(%s): sin datos de deuda", iso3)
+        return None
+    debt_gdp = float(df_debt.sort_values("timestamp").iloc[-1]["value"])
+
+    # -- Superávit primario: fiscal_balance (% PIB) --
+    df_fiscal = get_series(f"wb_fiscal_balance_{iso3_lower}", days=365 * 5)
+    if df_fiscal.empty:
+        # Aproximación: ingresos - gastos excl. intereses (si disponible)
+        df_rev = get_series(f"wb_tax_revenue_pct_{iso3_lower}", days=365 * 5)
+        df_exp = get_series(f"wb_gov_spend_pct_{iso3_lower}", days=365 * 5)
+        if not df_rev.empty and not df_exp.empty:
+            rev = float(df_rev.sort_values("timestamp").iloc[-1]["value"])
+            exp = float(df_exp.sort_values("timestamp").iloc[-1]["value"])
+            primary_balance = rev - exp   # aproximación burda
+        else:
+            primary_balance = 0.0
+    else:
+        primary_balance = float(df_fiscal.sort_values("timestamp").iloc[-1]["value"])
+
+    # -- Crecimiento del PIB (g) --
+    df_gdp = get_series(f"wb_gdp_growth_{iso3_lower}", days=365 * 5)
+    if df_gdp.empty:
+        g = 2.0  # fallback neutro
+    else:
+        g = float(df_gdp.sort_values("timestamp").iloc[-1]["value"])
+
+    # -- Tipo de interés real (r) --
+    # Para EE.UU. usamos la serie derivada de FRED
+    if iso3 == "USA":
+        df_r = get_series("fred_real_rate_us", days=365 * 2)
+        r = float(df_r.sort_values("timestamp").iloc[-1]["value"]) if not df_r.empty else 2.0
+    else:
+        # Aproximación: usamos tipo BCE/global de referencia + diferencial CDS (simplificado)
+        # Sin datos directos, estimamos r ≈ inflación objetivo 2% + prima de riesgo implícita
+        # Para países europeos: tipo real ≈ rendimiento bono 10Y real (si disponible)
+        spread_map = {
+            "ESP": "ecb_spread_es_de", "ITA": "ecb_spread_it_de",
+            "FRA": "ecb_spread_fr_de", "PRT": "ecb_spread_pt_de",
+            "GRC": "ecb_spread_gr_de",
+        }
+        sid_spread = spread_map.get(iso3)
+        if sid_spread:
+            df_sp = get_series(sid_spread, days=365)
+            spread = float(df_sp.sort_values("timestamp").iloc[-1]["value"]) if not df_sp.empty else 0.0
+            # r real ≈ base BCE real (≈0.5%) + spread / 100 convertido a pct
+            r = 0.5 + spread  # spread ya en puntos porcentuales
+        else:
+            r = 2.5  # fallback global (ej. JPN, CHN, GBR, BRA)
+
+    r_minus_g = r - g
+    delta_debt_gdp = (r_minus_g / 100) * debt_gdp - primary_balance
+
+    # Clasificación
+    if delta_debt_gdp < -0.5:
+        classification = "sostenible"
+        interpretation = f"La deuda de {iso3} está bajando a ritmo de {abs(delta_debt_gdp):.1f}pp/año"
+    elif delta_debt_gdp < 0.5:
+        classification = "estabilizando"
+        interpretation = f"La deuda de {iso3} se mantiene estable (Δ ≈ {delta_debt_gdp:.1f}pp/año)"
+    elif delta_debt_gdp < 2.0:
+        classification = "insostenible_leve"
+        interpretation = f"La deuda de {iso3} sube ~{delta_debt_gdp:.1f}pp/año (insostenible moderado)"
+    else:
+        classification = "insostenible_grave"
+        interpretation = f"La deuda de {iso3} sube ~{delta_debt_gdp:.1f}pp/año (insostenible grave)"
+
+    return {
+        "country": iso3,
+        "r": round(r, 2),
+        "g": round(g, 2),
+        "r_minus_g": round(r_minus_g, 2),
+        "primary_balance": round(primary_balance, 2),
+        "debt_gdp": round(debt_gdp, 1),
+        "delta_debt_gdp": round(delta_debt_gdp, 2),
+        "classification": classification,
+        "interpretation": interpretation,
+    }
+
+
+def calculate_financial_repression_transfer(
+    debt_total_bn: float,
+    real_rate_pct: float,
+    population_millions: float,
+) -> Optional[dict]:
+    """
+    Calcula la transferencia de riqueza implícita en la represión financiera.
+
+    Parámetros:
+      debt_total_bn      : deuda total en miles de millones USD
+      real_rate_pct      : tipo real en % (negativo = represión financiera)
+      population_millions: población en millones
+
+    Devuelve dict con transferencia_total_bn y transferencia_per_capita,
+    o None si el tipo real no es negativo (no hay represión).
+    """
+    if real_rate_pct >= 0:
+        return None   # No hay represión financiera
+    transferencia_total_bn = debt_total_bn * abs(real_rate_pct) / 100.0
+    if population_millions > 0:
+        transferencia_per_capita = (transferencia_total_bn * 1_000) / population_millions
+    else:
+        transferencia_per_capita = 0.0
+    return {
+        "real_rate_pct": real_rate_pct,
+        "transferencia_total_bn": round(transferencia_total_bn, 1),
+        "transferencia_per_capita": round(transferencia_per_capita, 0),
+    }
+
+
 def get_nfp_history(months: int = 24) -> pd.DataFrame:
     """
     Devuelve el historial de NFP de los últimos N meses.
