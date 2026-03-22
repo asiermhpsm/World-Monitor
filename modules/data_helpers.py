@@ -638,6 +638,221 @@ def load_json_data(filename: str) -> Optional[dict]:
         return None
 
 
+# ── Geopolítica (Módulo 10) ────────────────────────────────────────────────────
+
+def get_conflict_asset_impact(
+    affected_assets: list,
+    start_date: str,
+) -> list:
+    """
+    Para cada ticker en affected_assets, obtiene el precio en start_date
+    y el precio mas reciente de SQLite, calcula la variacion desde el inicio
+    del conflicto.
+
+    Parametros:
+        affected_assets: lista de indicator_ids (ej. ["yf_bz_close", "yf_gc_close"])
+                         o tickers de Yahoo Finance (ej. ["BZ=F", "GC=F"])
+        start_date: fecha de inicio del conflicto en formato "YYYY-MM-DD"
+
+    Retorna lista de dicts:
+        ticker, nombre_legible, precio_inicio, precio_actual, variacion_pct, variacion_abs
+    Si no hay dato para un ticker, devuelve None para ese ticker.
+    """
+    from datetime import datetime, timedelta
+
+    # Mapeo de tickers Yahoo -> indicator_id SQLite y nombres legibles
+    TICKER_TO_ID = {
+        "BZ=F":     ("yf_bz_close",      "Brent Crude"),
+        "NG=F":     ("yf_ng_close",       "Gas Natural"),
+        "GC=F":     ("yf_gc_close",       "Oro"),
+        "^VIX":     ("yf_vix_close",      "VIX"),
+        "DX-Y.NYB": ("yf_dxy_close",      "Dólar (DXY)"),
+        "ZW=F":     ("yf_zw_close",       "Trigo"),
+        "ZC=F":     ("yf_zc_close",       "Maíz"),
+        "EURUSD=X": ("yf_eurusd_close",   "EUR/USD"),
+        "SOXX":     ("yf_soxx_close",     "Semiconductores (SOXX)"),
+        "TSM":      ("yf_tsm_close",      "TSMC"),
+        "MCHI":     ("yf_mchi_close",     "China ETF"),
+        "EEM":      ("yf_eem_close",      "Emergentes (EEM)"),
+        "^GSPC":    ("yf_sp500_close",    "S&P 500"),
+    }
+
+    results = []
+    try:
+        start_dt = datetime.strptime(start_date, "%Y-%m-%d")
+    except (ValueError, TypeError):
+        return []
+
+    window = timedelta(days=3)
+
+    for ticker in affected_assets:
+        entry = TICKER_TO_ID.get(ticker)
+        if entry is None:
+            # Intentar construir el indicator_id a partir del ticker directamente
+            indicator_id = f"yf_{ticker.lower().replace('=', '').replace('^', '').replace('-', '_')}_close"
+            nombre = ticker
+        else:
+            indicator_id, nombre = entry
+
+        try:
+            with SessionLocal() as db:
+                # Precio en start_date (±3 dias)
+                row_start = (
+                    db.query(TimeSeries)
+                    .filter(
+                        TimeSeries.indicator_id == indicator_id,
+                        TimeSeries.timestamp >= start_dt - window,
+                        TimeSeries.timestamp <= start_dt + window,
+                    )
+                    .order_by(
+                        # Ordenar por distancia a la fecha objetivo
+                        (TimeSeries.timestamp - start_dt).desc()
+                    )
+                    .first()
+                )
+                # Precio actual
+                row_current = (
+                    db.query(TimeSeries)
+                    .filter(TimeSeries.indicator_id == indicator_id)
+                    .order_by(TimeSeries.timestamp.desc())
+                    .first()
+                )
+
+            if row_start is None or row_current is None:
+                results.append(None)
+                continue
+
+            p_start = float(row_start.value) if row_start.value is not None else None
+            p_current = float(row_current.value) if row_current.value is not None else None
+
+            if p_start is None or p_current is None or p_start == 0:
+                results.append(None)
+                continue
+
+            var_abs = p_current - p_start
+            var_pct = (var_abs / abs(p_start)) * 100
+
+            results.append({
+                "ticker":         ticker,
+                "nombre":         nombre,
+                "indicator_id":   indicator_id,
+                "precio_inicio":  p_start,
+                "precio_actual":  p_current,
+                "variacion_abs":  var_abs,
+                "variacion_pct":  var_pct,
+            })
+        except Exception as exc:
+            logger.debug("get_conflict_asset_impact(%s): %s", ticker, exc)
+            results.append(None)
+
+    return results
+
+
+def calculate_gpr_percentile(
+    current_gpr: float,
+    series_id: str = "GPRC",
+) -> dict:
+    """
+    Calcula en que percentil historico esta el valor actual del GPR.
+
+    Parametros:
+        current_gpr: valor actual del GPR
+        series_id:   'GPRC' (desde 1985) o 'GPRH' (desde 1900)
+
+    Retorna dict con:
+        percentile: valor 0-100
+        interpretation: texto descriptivo
+        n_months_total: total de meses en la serie historica
+        n_months_higher: meses historicos con GPR mas alto
+        comparative_events: lista de eventos historicos con GPR similar
+    """
+    # Mapeo del series_id al indicator_id en BD
+    ID_MAP = {
+        "GPRC": "fred_gpr_gprc",
+        "GPRH": "fred_gpr_gprh",
+        "GPR":  "fred_gpr_gprc",
+    }
+    indicator_id = ID_MAP.get(series_id, "fred_gpr_gprc")
+
+    # Eventos historicos de referencia (GPR aproximado)
+    HISTORICAL_EVENTS = [
+        {"label": "11-S (2001)",            "gpr": 450},
+        {"label": "Guerra Golfo (1990)",    "gpr": 280},
+        {"label": "Ucrania (2022)",         "gpr": 230},
+        {"label": "Irak (2003)",            "gpr": 200},
+        {"label": "COVID-19 (2020)",        "gpr": 160},
+        {"label": "Corea del Norte (2017)", "gpr": 150},
+        {"label": "Crimea (2014)",          "gpr": 130},
+        {"label": "Nivel normal",           "gpr": 100},
+    ]
+
+    default = {
+        "percentile": None,
+        "interpretation": "Datos históricos no disponibles",
+        "n_months_total": 0,
+        "n_months_higher": 0,
+        "comparative_events": [],
+    }
+
+    if current_gpr is None:
+        return default
+
+    try:
+        with SessionLocal() as db:
+            rows = (
+                db.query(TimeSeries.value)
+                .filter(
+                    TimeSeries.indicator_id == indicator_id,
+                    TimeSeries.value.isnot(None),
+                )
+                .all()
+            )
+
+        if not rows:
+            return default
+
+        values = [float(r.value) for r in rows if r.value is not None]
+        if len(values) < 10:
+            return default
+
+        n_total = len(values)
+        n_higher = sum(1 for v in values if v > current_gpr)
+        percentile = round((1 - n_higher / n_total) * 100, 1)
+
+        # Generar interpretacion textual
+        if percentile >= 99:
+            interp = f"GPR en el percentil {percentile} — nivel prácticamente sin precedentes históricos"
+        elif percentile >= 95:
+            interp = f"GPR en el percentil {percentile} — zona de crisis histórica (top 5% de todos los registros)"
+        elif percentile >= 90:
+            interp = f"GPR en el percentil {percentile} — tensión muy elevada (top 10% histórico)"
+        elif percentile >= 75:
+            interp = f"GPR en el percentil {percentile} — tensión significativa (cuartil superior)"
+        elif percentile >= 50:
+            interp = f"GPR en el percentil {percentile} — por encima de la mediana histórica"
+        else:
+            interp = f"GPR en el percentil {percentile} — nivel moderado o bajo históricamente"
+
+        # Eventos comparativos cercanos
+        comparative = [
+            ev for ev in HISTORICAL_EVENTS
+            if abs(ev["gpr"] - current_gpr) <= 60
+        ]
+        comparative.sort(key=lambda e: abs(e["gpr"] - current_gpr))
+
+        return {
+            "percentile":         percentile,
+            "interpretation":     interp,
+            "n_months_total":     n_total,
+            "n_months_higher":    n_higher,
+            "comparative_events": comparative[:3],
+        }
+
+    except Exception as exc:
+        logger.debug("calculate_gpr_percentile: %s", exc)
+        return default
+
+
 # ── Sistema Financiero (Módulo 9) ──────────────────────────────────────────────
 
 def calculate_hy_spread_proxy() -> Optional[float]:

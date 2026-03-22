@@ -1,0 +1,14 @@
+{
+  "last_updated": "2026-01-01",
+  "dependencies": [
+    {"from": "USA", "to": "CHN", "category": "Manufacturing", "item": "Bienes de consumo", "pct_imports": 15, "criticality": "medium"},
+    {"from": "USA", "to": "CHN", "category": "Minerals", "item": "Tierras raras", "pct_imports": 80, "criticality": "critical"},
+    {"from": "USA", "to": "CHN", "category": "Pharma", "item": "Principios activos farmacéuticos", "pct_imports": 40, "criticality": "high"},
+    {"from": "CHN", "to": "USA", "category": "Technology", "item": "Semiconductores avanzados", "pct_imports": 45, "criticality": "critical"},
+    {"from": "CHN", "to": "USA", "category": "Finance", "item": "Bonos del Tesoro americano", "pct_holdings": 2.1, "criticality": "medium"},
+    {"from": "EU", "to": "CHN", "category": "Manufacturing", "item": "Paneles solares", "pct_imports": 95, "criticality": "high"},
+    {"from": "EU", "to": "CHN", "category": "Minerals", "item": "Litio procesado", "pct_imports": 70, "criticality": "high"},
+    {"from": "EU", "to": "RUS", "category": "Energy", "item": "Gas natural (pre-2022)", "pct_imports": 40, "criticality": "critical"},
+    {"from": "CHN", "to": "RUS", "category": "Energy", "item": "Gas natural", "pct_imports": 25, "criticality": "medium"}
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "last_updated": "2026-03-20",
+  "country_risk_levels": {
+    "IRN": "critical", "RUS": "critical", "PRK": "critical",
+    "UKR": "critical", "ISR": "high", "SYR": "critical",
+    "VEN": "high", "MMR": "high", "AFG": "critical",
+    "ETH": "high", "SDN": "high", "MLI": "high",
+    "CHN": "medium", "USA": "medium", "SAU": "medium",
+    "IRQ": "high", "LBY": "high", "YEM": "critical",
+    "PAK": "medium", "IND": "low", "TUR": "medium",
+    "BRA": "low", "MEX": "medium", "COL": "medium",
+    "NGA": "high", "SOM": "critical", "COD": "high",
+    "LBN": "high", "JOR": "medium", "EGY": "medium",
+    "KAZ": "low", "UZB": "low", "GEO": "medium",
+    "AZE": "medium", "ARM": "medium", "MDA": "medium",
+    "BLR": "high", "SRB": "medium", "KOS": "medium"
+  },
+  "risk_score_map": {
+    "critical": 4,
+    "high": 3,
+    "medium": 2,
+    "low": 1
+  },
+  "color_map": {
+    "critical": "#ef4444",
+    "high": "#f97316",
+    "medium": "#f59e0b",
+    "low": "#10b981"
+  }
+}

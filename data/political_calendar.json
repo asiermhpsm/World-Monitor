@@ -1,0 +1,12 @@
+{
+  "last_updated": "2026-03-20",
+  "events": [
+    {"date": "2026-03-18", "title": "Reunión Fed FOMC", "category": "monetary_policy", "impact": "high", "countries": ["USA"], "description": "Fed mantiene tipos en 3.5-3.75%"},
+    {"date": "2026-04-10", "title": "Cumbre G7", "category": "geopolitics", "impact": "high", "countries": ["G7"], "description": "Agenda: Irán, Ucrania, aranceles"},
+    {"date": "2026-04-16", "title": "Reunión BCE", "category": "monetary_policy", "impact": "high", "countries": ["EU"], "description": "Decisión tipos BCE en contexto de inflación elevada"},
+    {"date": "2026-05-15", "title": "Elecciones Australia", "category": "election", "impact": "medium", "countries": ["AUS"], "description": "Elecciones federales australianas"},
+    {"date": "2026-06-01", "title": "Reunión OPEP+", "category": "energy", "impact": "high", "countries": ["OPEC"], "description": "Revisión de cuotas de producción en contexto del conflicto con Irán"},
+    {"date": "2026-09-27", "title": "Elecciones Alemania (Bundesrat)", "category": "election", "impact": "medium", "countries": ["DEU"], "description": "Elecciones estatales con implicaciones para la coalición federal"},
+    {"date": "2026-11-03", "title": "Elecciones Midterm EE.UU.", "category": "election", "impact": "very_high", "countries": ["USA"], "description": "Elecciones de mitad de mandato. Determinarán el control del Congreso"}
+  ]
+}

@@ -1,0 +1,45 @@
+{
+  "last_updated": "2026-03-20",
+  "sanction_regimes": [
+    {
+      "target_country": "RUS",
+      "sanctioning_entities": ["USA", "EU", "GBR", "CAN", "AUS", "JPN"],
+      "severity": "comprehensive",
+      "start_date": "2022-02-24",
+      "estimated_gdp_impact_pct": -5.0,
+      "description": "Sanciones masivas por invasión de Ucrania: exclusión SWIFT parcial, congelación de reservas, restricciones de exportación"
+    },
+    {
+      "target_country": "IRN",
+      "sanctioning_entities": ["USA", "EU", "GBR"],
+      "severity": "comprehensive",
+      "start_date": "2018-05-08",
+      "estimated_gdp_impact_pct": -15.0,
+      "description": "Sanciones por programa nuclear y ahora por conflicto bélico. Petróleo iraní embargado."
+    },
+    {
+      "target_country": "CHN",
+      "sanctioning_entities": ["USA"],
+      "severity": "targeted",
+      "start_date": "2018-07-06",
+      "estimated_gdp_impact_pct": -1.5,
+      "description": "Aranceles y restricciones tecnológicas (semiconductores, IA). No son sanciones formales pero tienen efecto equivalente."
+    },
+    {
+      "target_country": "PRK",
+      "sanctioning_entities": ["USA", "EU", "GBR", "JPN", "KOR", "AUS"],
+      "severity": "comprehensive",
+      "start_date": "2006-10-14",
+      "estimated_gdp_impact_pct": -10.0,
+      "description": "Sanciones por programa nuclear y de misiles"
+    },
+    {
+      "target_country": "VEN",
+      "sanctioning_entities": ["USA", "EU"],
+      "severity": "sectoral",
+      "start_date": "2017-08-25",
+      "estimated_gdp_impact_pct": -8.0,
+      "description": "Sanciones por crisis democrática. Restricciones al sector petrolero."
+    }
+  ]
+}

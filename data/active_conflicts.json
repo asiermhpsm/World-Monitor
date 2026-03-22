@@ -1,0 +1,119 @@
+{
+  "last_updated": "2026-03-20",
+  "conflicts": [
+    {
+      "id": "iran_us_2026",
+      "title": "Guerra EE.UU.-Israel vs Irán",
+      "region": "Middle East",
+      "countries_involved": ["IRN", "USA", "ISR"],
+      "start_date": "2026-02-28",
+      "severity": 5,
+      "status": "active",
+      "intensity": "high",
+      "summary": "EE.UU. e Israel lanzaron ataques conjuntos contra Irán el 28 de febrero de 2026 en la Operación Épica Furia. Irán respondió con misiles y drones sobre bases americanas y amenazó el Estrecho de Ormuz.",
+      "economic_impact": {
+        "oil_disruption_pct": 20,
+        "affected_routes": ["Strait of Hormuz"],
+        "estimated_gdp_impact_global_pct": -0.5,
+        "inflation_impact_pp": 0.8
+      },
+      "affected_assets": ["BZ=F", "NG=F", "GC=F", "^VIX", "DX-Y.NYB"],
+      "scenarios": [
+        {"name": "Resolución rápida (<6 semanas)", "probability": 0.30, "description": "Acuerdo diplomático, petróleo vuelve a 75-85$", "sentiment": "positive"},
+        {"name": "Conflicto prolongado (2-4 meses)", "probability": 0.45, "description": "Petróleo en 100-130$, recesión leve en importadores", "sentiment": "negative"},
+        {"name": "Escalada regional", "probability": 0.20, "description": "Involucración de Hezbolá, Houthis, petróleo >150$", "sentiment": "critical"},
+        {"name": "Escalada sistémica", "probability": 0.05, "description": "Crisis energética global, recesión severa", "sentiment": "critical"}
+      ],
+      "key_dates": [
+        {"date": "2026-02-28", "event": "Inicio de la Operación Épica Furia"},
+        {"date": "2026-03-01", "event": "Cierre efectivo del Estrecho de Ormuz"},
+        {"date": "2026-03-05", "event": "Brent supera 100$ por primera vez desde 2022"}
+      ]
+    },
+    {
+      "id": "ukraine_russia",
+      "title": "Guerra Rusia-Ucrania",
+      "region": "Eastern Europe",
+      "countries_involved": ["RUS", "UKR"],
+      "start_date": "2022-02-24",
+      "severity": 5,
+      "status": "active",
+      "intensity": "medium",
+      "summary": "Conflicto bélico en curso desde febrero 2022. Frente de guerra estabilizado con avances rusos lentos. Impacto energético en Europa parcialmente absorbido.",
+      "economic_impact": {
+        "oil_disruption_pct": 5,
+        "affected_routes": ["Black Sea grain corridor"],
+        "estimated_gdp_impact_global_pct": -0.3,
+        "inflation_impact_pp": 0.3
+      },
+      "affected_assets": ["BZ=F", "ZW=F", "ZC=F", "EURUSD=X"],
+      "scenarios": [
+        {"name": "Negociación en 2026", "probability": 0.25, "description": "Acuerdo de alto el fuego con concesiones territoriales", "sentiment": "positive"},
+        {"name": "Statu quo prolongado", "probability": 0.55, "description": "Conflicto congelado, frente estabilizado", "sentiment": "neutral"},
+        {"name": "Escalada rusa", "probability": 0.15, "description": "Nuevos ataques masivos, mayor involucración OTAN", "sentiment": "negative"},
+        {"name": "Colapso ruso", "probability": 0.05, "description": "Retirada rusa, inestabilidad interna en Rusia", "sentiment": "positive"}
+      ],
+      "key_dates": [
+        {"date": "2022-02-24", "event": "Invasión rusa de Ucrania"},
+        {"date": "2022-03-01", "event": "Primeras sanciones masivas occidentales"},
+        {"date": "2023-06-06", "event": "Destrucción presa Nova Kajovka"}
+      ]
+    },
+    {
+      "id": "taiwan_china",
+      "title": "Tensión China-Taiwán",
+      "region": "East Asia",
+      "countries_involved": ["CHN", "TWN", "USA"],
+      "start_date": "2022-08-02",
+      "severity": 3,
+      "status": "ongoing_tension",
+      "intensity": "medium",
+      "summary": "Tensión persistente en el Estrecho de Taiwán. China realiza maniobras militares regulares. EE.UU. mantiene política de ambigüedad estratégica.",
+      "economic_impact": {
+        "oil_disruption_pct": 0,
+        "affected_routes": ["Taiwan Strait semiconductor supply chain"],
+        "estimated_gdp_impact_global_pct": -8.0,
+        "inflation_impact_pp": 5.0
+      },
+      "affected_assets": ["SOXX", "TSM", "MCHI", "^VIX"],
+      "scenarios": [
+        {"name": "Tensión sin conflicto abierto", "probability": 0.65, "description": "Statu quo actual indefinidamente", "sentiment": "neutral"},
+        {"name": "Escalada militar sin invasión", "probability": 0.20, "description": "Bloqueo naval, sanciones, shocks de semiconductores", "sentiment": "negative"},
+        {"name": "Invasión china", "probability": 0.10, "description": "Crisis global de semiconductores, recesión mundial", "sentiment": "critical"},
+        {"name": "Distensión diplomática", "probability": 0.05, "description": "Acuerdo de status quo formal", "sentiment": "positive"}
+      ],
+      "key_dates": [
+        {"date": "2022-08-02", "event": "Visita de Pelosi a Taiwán — maniobras chinas masivas"},
+        {"date": "2024-01-13", "event": "Elecciones presidenciales Taiwán — victoria partido pro-independencia"}
+      ]
+    },
+    {
+      "id": "us_china_trade",
+      "title": "Guerra Comercial EE.UU.-China",
+      "region": "Global",
+      "countries_involved": ["USA", "CHN"],
+      "start_date": "2025-01-20",
+      "severity": 4,
+      "status": "active",
+      "intensity": "high",
+      "summary": "Trump reimplantó aranceles masivos desde enero 2025. China respondió con contramedidas. Aranceles promedio EE.UU. sobre China superan el 60%.",
+      "economic_impact": {
+        "oil_disruption_pct": 0,
+        "affected_routes": ["Trans-Pacific trade"],
+        "estimated_gdp_impact_global_pct": -0.8,
+        "inflation_impact_pp": 1.0
+      },
+      "affected_assets": ["EEM", "MCHI", "EURUSD=X", "^GSPC"],
+      "scenarios": [
+        {"name": "Acuerdo comercial parcial", "probability": 0.25, "description": "Reducción de aranceles a cambio de concesiones chinas", "sentiment": "positive"},
+        {"name": "Escalada arancelaria", "probability": 0.40, "description": "Aranceles universales del 10-20%, desaceleración global", "sentiment": "negative"},
+        {"name": "Desacoplamiento acelerado", "probability": 0.30, "description": "Fragmentación en dos bloques comerciales", "sentiment": "negative"},
+        {"name": "Resolución diplomática", "probability": 0.05, "description": "Vuelta al status quo pre-2018", "sentiment": "positive"}
+      ],
+      "key_dates": [
+        {"date": "2025-01-20", "event": "Trump reimplanta aranceles el primer día"},
+        {"date": "2025-04-02", "event": "Aranceles recíprocos universales anunciados"}
+      ]
+    }
+  ]
+}
