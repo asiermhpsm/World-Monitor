@@ -1,0 +1,21 @@
+{
+  "last_updated": "2026-03-01",
+  "ukraine_russia": {
+    "wheat_pct_world": 28,
+    "corn_pct_world": 15,
+    "sunflower_oil_pct_world": 55,
+    "fertilizer_pct_world": 18,
+    "notes": "Ucrania y Rusia producen juntos el 28% del trigo mundial exportado, 15% del maíz y más del 55% del aceite de girasol. La disrupción del corredor del Mar Negro afecta directamente al abastecimiento de países importadores netos del Norte de África y Oriente Medio."
+  },
+  "red_sea_houthi": {
+    "pct_food_trade_suez": 12,
+    "affected_routes": ["Trigo del Mar Negro hacia Asia", "Aceites vegetales hacia Europa", "Azúcar y arroz de Asia hacia Europa"],
+    "notes": "El Canal de Suez canaliza aprox. el 12% del comercio alimentario global. Los ataques Houthi han desviado buques hacia el Cabo de Buena Esperanza, añadiendo 10-14 días de tránsito y aumentando costes de transporte un 150-300%."
+  },
+  "iran_conflict": {
+    "notes": "El conflicto con Irán afecta al Estrecho de Ormuz, crítico para el tránsito de fertilizantes del Golfo Pérsico hacia mercados agrícolas globales. Arabia Saudí y Emiratos son exportadores netos de urea y fosfatos."
+  },
+  "people_in_acute_food_insecurity": 282000000,
+  "people_source": "WFP/FAO — GRFC 2025",
+  "countries_crisis_or_worse": 59
+}

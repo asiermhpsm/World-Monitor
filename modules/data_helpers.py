@@ -615,6 +615,98 @@ def calculate_sahm_indicator():
     return sahm_current, level, df[["timestamp", "sahm"]].reset_index(drop=True)
 
 
+# ── Energía (Módulo 7) ─────────────────────────────────────────────────────────
+
+def load_json_data(filename: str) -> Optional[dict]:
+    """
+    Carga un fichero JSON de la carpeta data/ del proyecto.
+    Devuelve el contenido como diccionario Python.
+    Si el fichero no existe, devuelve None con log de warning.
+    """
+    from pathlib import Path
+    data_dir = Path(__file__).resolve().parent.parent / "data"
+    filepath = data_dir / filename
+    try:
+        with open(filepath, "r", encoding="utf-8") as f:
+            import json
+            return json.load(f)
+    except FileNotFoundError:
+        logger.warning("load_json_data: fichero no encontrado: %s", filepath)
+        return None
+    except Exception as exc:
+        logger.warning("load_json_data(%s): %s", filename, exc)
+        return None
+
+
+def calculate_oil_inflation_correlation(months: int = 60) -> Optional[dict]:
+    """
+    Calcula la correlación de Pearson entre el precio del Brent y la inflación americana.
+
+    - Lee BZ=F (yf_bz_close) y CPI americano (fred_cpi_us) de SQLite.
+    - Desplaza el CPI 3 meses hacia atrás para capturar el efecto retardado.
+    - Calcula correlación de Pearson y p-valor.
+    - También estima cuánto sube la inflación por cada 10$ de subida del Brent.
+
+    Devuelve dict con: correlation, p_value, slope_per_10usd, n_obs
+    O None si hay menos de 24 meses de datos solapados.
+    """
+    try:
+        from scipy import stats as sp_stats
+    except ImportError:
+        sp_stats = None
+
+    days = months * 32 + 120
+    df_brent = get_series("yf_bz_close", days=days)
+    df_cpi   = get_series("fred_cpi_us", days=days)
+
+    if df_brent.empty or df_cpi.empty:
+        return None
+
+    # Resamplear ambas series a frecuencia mensual (último valor del mes)
+    df_brent["timestamp"] = pd.to_datetime(df_brent["timestamp"])
+    df_cpi["timestamp"]   = pd.to_datetime(df_cpi["timestamp"])
+
+    df_brent = df_brent.set_index("timestamp").resample("MS").last().rename(columns={"value": "brent"})
+    df_cpi   = df_cpi.set_index("timestamp").resample("MS").last().rename(columns={"value": "cpi"})
+
+    # Calcular YoY del CPI si son datos de nivel (fred_cpi_us es nivel)
+    df_cpi["cpi_yoy"] = df_cpi["cpi"].pct_change(12) * 100
+
+    # Desplazar el CPI 3 meses hacia atrás (el petróleo adelanta a la inflación)
+    df_cpi_shifted = df_cpi[["cpi_yoy"]].shift(-3)
+
+    merged = df_brent.join(df_cpi_shifted, how="inner").dropna()
+    merged = merged.tail(months)
+
+    if len(merged) < 24:
+        return None
+
+    brent_vals = merged["brent"].values
+    cpi_vals   = merged["cpi_yoy"].values
+
+    if sp_stats is not None:
+        slope, intercept, r_value, p_value, std_err = sp_stats.linregress(brent_vals, cpi_vals)
+        correlation = r_value
+    else:
+        # Fallback: correlación de numpy
+        correlation = float(pd.Series(brent_vals).corr(pd.Series(cpi_vals)))
+        # Estimación de la pendiente por mínimos cuadrados manual
+        x = brent_vals - brent_vals.mean()
+        y = cpi_vals - cpi_vals.mean()
+        slope = float((x * y).sum() / (x ** 2).sum()) if (x ** 2).sum() > 0 else 0.0
+        p_value = None
+
+    slope_per_10usd = slope * 10
+
+    return {
+        "correlation":    round(float(correlation), 3),
+        "p_value":        round(float(p_value), 4) if p_value is not None else None,
+        "slope_per_10usd": round(float(slope_per_10usd), 3),
+        "n_obs":          len(merged),
+        "df":             merged.reset_index(),
+    }
+
+
 def get_nfp_history(months: int = 24) -> pd.DataFrame:
     """
     Devuelve el historial de NFP de los últimos N meses.

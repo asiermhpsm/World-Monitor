@@ -1,0 +1,40 @@
+{
+  "last_updated": "2026-03-20",
+  "routes": [
+    {
+      "name": "Estrecho de Ormuz",
+      "barrels_per_day": 20000000,
+      "pct_global_trade": 20,
+      "status": "blocked",
+      "notes": "Bloqueado efectivamente desde el 28 febrero 2026 por conflicto EE.UU.-Irán"
+    },
+    {
+      "name": "Canal de Suez",
+      "barrels_per_day": 10000000,
+      "pct_global_trade": 10,
+      "status": "reduced",
+      "notes": "Tráfico reducido por tensiones en el Mar Rojo"
+    },
+    {
+      "name": "Estrecho de Malaca",
+      "barrels_per_day": 16000000,
+      "pct_global_trade": 16,
+      "status": "normal",
+      "notes": "Operativo con normalidad"
+    },
+    {
+      "name": "Gasoductos Europa-Noruega",
+      "barrels_per_day": 0,
+      "pct_global_trade": 5,
+      "status": "normal",
+      "notes": "Principal fuente de gas de Europa Occidental"
+    },
+    {
+      "name": "Gasoductos Europa-Argelia",
+      "barrels_per_day": 0,
+      "pct_global_trade": 3,
+      "status": "reduced",
+      "notes": "Capacidad reducida por tensiones políticas"
+    }
+  ]
+}
