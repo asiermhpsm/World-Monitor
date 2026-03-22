@@ -1,0 +1,7 @@
+{
+  "last_updated": "2026-03-20",
+  "use_override": false,
+  "hy_spread_bp": 380,
+  "ig_spread_bp": 95,
+  "note": "Activar use_override=true si el calculo automatico falla"
+}

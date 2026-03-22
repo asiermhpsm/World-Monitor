@@ -1,0 +1,20 @@
+{
+  "last_updated": "2026-01-01",
+  "source": "Informes anuales bancos + BCE + Fed",
+  "banks": {
+    "JPM":     {"cet1_pct": 15.3, "npl_pct": 0.6, "roe_pct": 17.2, "shares_bn": 2.85,  "flag": "US", "name": "JPMorgan Chase"},
+    "BAC":     {"cet1_pct": 13.5, "npl_pct": 0.5, "roe_pct": 11.8, "shares_bn": 7.73,  "flag": "US", "name": "Bank of America"},
+    "C":       {"cet1_pct": 13.6, "npl_pct": 0.7, "roe_pct": 7.3,  "shares_bn": 1.89,  "flag": "US", "name": "Citigroup"},
+    "GS":      {"cet1_pct": 14.6, "npl_pct": 0.3, "roe_pct": 10.9, "shares_bn": 0.30,  "flag": "US", "name": "Goldman Sachs"},
+    "WFC":     {"cet1_pct": 11.9, "npl_pct": 0.9, "roe_pct": 11.7, "shares_bn": 3.38,  "flag": "US", "name": "Wells Fargo"},
+    "MS":      {"cet1_pct": 15.2, "npl_pct": 0.2, "roe_pct": 13.1, "shares_bn": 1.56,  "flag": "US", "name": "Morgan Stanley"},
+    "DB":      {"cet1_pct": 13.8, "npl_pct": 1.8, "roe_pct": 7.1,  "shares_bn": 2.05,  "flag": "DE", "name": "Deutsche Bank"},
+    "BNP.PA":  {"cet1_pct": 13.2, "npl_pct": 2.3, "roe_pct": 10.4, "shares_bn": 1.24,  "flag": "FR", "name": "BNP Paribas"},
+    "SAN.MC":  {"cet1_pct": 12.5, "npl_pct": 3.1, "roe_pct": 14.1, "shares_bn": 16.3,  "flag": "ES", "name": "Santander"},
+    "BBVA.MC": {"cet1_pct": 12.7, "npl_pct": 3.4, "roe_pct": 16.4, "shares_bn": 5.76,  "flag": "ES", "name": "BBVA"},
+    "HSBA.L":  {"cet1_pct": 14.3, "npl_pct": 1.9, "roe_pct": 12.8, "shares_bn": 17.8,  "flag": "GB", "name": "HSBC"},
+    "UBSG.SW": {"cet1_pct": 14.9, "npl_pct": 0.4, "roe_pct": 8.2,  "shares_bn": 3.16,  "flag": "CH", "name": "UBS"},
+    "BARC.L":  {"cet1_pct": 13.2, "npl_pct": 2.1, "roe_pct": 9.8,  "shares_bn": 14.9,  "flag": "GB", "name": "Barclays"},
+    "UCG.MI":  {"cet1_pct": 16.2, "npl_pct": 2.9, "roe_pct": 17.8, "shares_bn": 1.44,  "flag": "IT", "name": "UniCredit"}
+  }
+}

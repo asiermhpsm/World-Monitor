@@ -638,6 +638,261 @@ def load_json_data(filename: str) -> Optional[dict]:
         return None
 
 
+# ── Sistema Financiero (Módulo 9) ──────────────────────────────────────────────
+
+def calculate_hy_spread_proxy() -> Optional[float]:
+    """
+    Calcula un proxy del spread High Yield (HY) en puntos basicos.
+    Metodo: diferencia de yield implicita entre HYG e IEF.
+    yield_implicito = (cupon_anual_estimado / precio) * 100
+    spread = yield_HYG - yield_IEF  (en %)  → convertir a pb × 100
+
+    Cupon anual estimado:
+      HYG ≈ 4.5 USD/year (distribucion mensual ~0.375)
+      IEF ≈ 2.5 USD/year (bono tesoro 7-10y)
+
+    Si el calculo falla o hay override activado en credit_spreads_override.json,
+    devuelve el valor estatico.
+    """
+    # Comprobar override primero
+    try:
+        from pathlib import Path
+        import json
+        override_path = Path(__file__).resolve().parent.parent / "data" / "credit_spreads_override.json"
+        with open(override_path, "r", encoding="utf-8") as f:
+            override = json.load(f)
+        if override.get("use_override", False):
+            return float(override.get("hy_spread_bp", 380))
+    except Exception:
+        pass
+
+    try:
+        hyg_val, _ = get_latest_value("yf_hyg_close")
+        ief_val, _ = get_latest_value("yf_ief_close")
+
+        if hyg_val is None or ief_val is None or hyg_val <= 0 or ief_val <= 0:
+            return None
+
+        # Cupones anuales estimados (distribuciones historicas tipicas)
+        CUPON_HYG = 4.5   # USD/año estimado
+        CUPON_IEF = 2.5   # USD/año estimado
+
+        yield_hyg = (CUPON_HYG / float(hyg_val)) * 100
+        yield_ief = (CUPON_IEF / float(ief_val)) * 100
+
+        spread_pct = yield_hyg - yield_ief
+        spread_bp = spread_pct * 100  # Convertir % a puntos basicos
+
+        # Sanity check: spread HY debe estar entre 100 y 3000 pb
+        if 100 <= spread_bp <= 3000:
+            return round(spread_bp, 0)
+
+        # Si el resultado es irreal, intentar con valores de fallback
+        return None
+    except Exception as exc:
+        logger.debug("calculate_hy_spread_proxy: %s", exc)
+        return None
+
+
+def calculate_ig_spread_proxy() -> Optional[float]:
+    """
+    Calcula un proxy del spread Investment Grade (IG) en puntos basicos.
+    Metodo analogo a calculate_hy_spread_proxy() con LQD e IEF.
+    Cupon estimado LQD ≈ 3.0 USD/año
+    """
+    try:
+        from pathlib import Path
+        import json
+        override_path = Path(__file__).resolve().parent.parent / "data" / "credit_spreads_override.json"
+        with open(override_path, "r", encoding="utf-8") as f:
+            override = json.load(f)
+        if override.get("use_override", False):
+            return float(override.get("ig_spread_bp", 95))
+    except Exception:
+        pass
+
+    try:
+        lqd_val, _ = get_latest_value("yf_lqd_close")
+        ief_val, _ = get_latest_value("yf_ief_close")
+
+        if lqd_val is None or ief_val is None or lqd_val <= 0 or ief_val <= 0:
+            return None
+
+        CUPON_LQD = 3.0
+        CUPON_IEF = 2.5
+
+        yield_lqd = (CUPON_LQD / float(lqd_val)) * 100
+        yield_ief = (CUPON_IEF / float(ief_val)) * 100
+
+        spread_pct = yield_lqd - yield_ief
+        spread_bp = spread_pct * 100
+
+        if 20 <= spread_bp <= 800:
+            return round(spread_bp, 0)
+        return None
+    except Exception as exc:
+        logger.debug("calculate_ig_spread_proxy: %s", exc)
+        return None
+
+
+def calculate_systemic_risk_index() -> dict:
+    """
+    Calcula el Indice Compuesto de Riesgo Sistemico (0-100).
+
+    Componentes y pesos:
+      - STLFSI4 (estres financiero Fed St. Louis): peso 30%
+        Normalizado: min=-10 → 0, max=10 → 100
+      - Spread HY (proxy HYG/IEF): peso 25%
+        Normalizado: min=200pb → 0, max=2000pb → 100
+      - Spread IG (proxy LQD/IEF): peso 15%
+        Normalizado: min=50pb → 0, max=500pb → 100
+      - VIX: peso 20%
+        Normalizado: min=10 → 0, max=80 → 100
+      - Prima de riesgo Italia (ecb_spread_it_de): peso 10%
+        Normalizado: min=0pb → 0, max=600pb → 100
+
+    Si un componente no esta disponible, se excluye y se redistribuyen pesos.
+
+    Devuelve dict con:
+      indice_compuesto (0-100)
+      nivel ('green' | 'yellow_green' | 'yellow' | 'orange' | 'red')
+      componentes: lista de dicts con nombre, valor_raw, valor_normalizado, peso, contribucion
+    """
+
+    def _normalize(val, min_val, max_val):
+        """Normaliza val a [0, 100] segun los rangos historicos."""
+        if val is None:
+            return None
+        v = float(val)
+        rng = max_val - min_val
+        if rng == 0:
+            return 0.0
+        norm = (v - min_val) / rng * 100.0
+        return max(0.0, min(100.0, norm))
+
+    # Definicion de los 5 componentes
+    spec = [
+        {
+            "nombre": "STLFSI4 (Estres Fed)",
+            "series_id": "fred_stlfsi4_us",
+            "min_val": -10.0,
+            "max_val": 10.0,
+            "peso_base": 0.30,
+            "unit": "",
+        },
+        {
+            "nombre": "Spread HY (pb)",
+            "series_id": None,  # Calculado via funcion
+            "min_val": 200.0,
+            "max_val": 2000.0,
+            "peso_base": 0.25,
+            "unit": "pb",
+        },
+        {
+            "nombre": "Spread IG (pb)",
+            "series_id": None,
+            "min_val": 50.0,
+            "max_val": 500.0,
+            "peso_base": 0.15,
+            "unit": "pb",
+        },
+        {
+            "nombre": "VIX",
+            "series_id": "yf_vix_close",
+            "min_val": 10.0,
+            "max_val": 80.0,
+            "peso_base": 0.20,
+            "unit": "",
+        },
+        {
+            "nombre": "Prima Riesgo Italia (pb)",
+            "series_id": "ecb_spread_it_de",
+            "min_val": 0.0,
+            "max_val": 600.0,
+            "peso_base": 0.10,
+            "unit": "pb",
+        },
+    ]
+
+    # Obtener valores crudos
+    raw_values = []
+    for s in spec:
+        if s["series_id"] is not None:
+            val, _ = get_latest_value(s["series_id"])
+        elif s["nombre"].startswith("Spread HY"):
+            val = calculate_hy_spread_proxy()
+        elif s["nombre"].startswith("Spread IG"):
+            val = calculate_ig_spread_proxy()
+        else:
+            val = None
+        raw_values.append(val)
+
+    # Normalizar y calcular pesos redistribuidos
+    normalized = []
+    for i, s in enumerate(spec):
+        n = _normalize(raw_values[i], s["min_val"], s["max_val"])
+        normalized.append(n)
+
+    # Redistribuir pesos si hay componentes sin datos
+    pesos_activos = []
+    for i, n in enumerate(normalized):
+        if n is not None:
+            pesos_activos.append((i, spec[i]["peso_base"]))
+
+    if not pesos_activos:
+        return {
+            "indice_compuesto": None,
+            "nivel": "gray",
+            "componentes": [],
+        }
+
+    total_peso_activo = sum(p for _, p in pesos_activos)
+    pesos_finales = {}
+    for idx, peso in pesos_activos:
+        pesos_finales[idx] = peso / total_peso_activo  # Redistribuir a 100%
+
+    # Calcular indice compuesto
+    indice = 0.0
+    componentes = []
+    for i, s in enumerate(spec):
+        n = normalized[i]
+        peso_final = pesos_finales.get(i, 0.0)
+        contribucion = (n * peso_final) if n is not None else None
+
+        if contribucion is not None:
+            indice += contribucion
+
+        componentes.append({
+            "nombre": s["nombre"],
+            "valor_raw": raw_values[i],
+            "valor_normalizado": round(n, 1) if n is not None else None,
+            "peso_base_pct": round(s["peso_base"] * 100, 0),
+            "peso_final_pct": round(peso_final * 100, 1),
+            "contribucion": round(contribucion, 2) if contribucion is not None else None,
+            "unit": s["unit"],
+        })
+
+    indice = round(indice, 1)
+
+    # Determinar nivel
+    if indice < 25:
+        nivel = "green"
+    elif indice < 50:
+        nivel = "yellow_green"
+    elif indice < 65:
+        nivel = "yellow"
+    elif indice < 80:
+        nivel = "orange"
+    else:
+        nivel = "red"
+
+    return {
+        "indice_compuesto": indice,
+        "nivel": nivel,
+        "componentes": componentes,
+    }
+
+
 def calculate_oil_inflation_correlation(months: int = 60) -> Optional[dict]:
     """
     Calcula la correlación de Pearson entre el precio del Brent y la inflación americana.

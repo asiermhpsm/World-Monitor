@@ -1,0 +1,19 @@
+{
+  "last_updated": "2025-07-01",
+  "fed_dfast_2025": {
+    "scenario": "Severo adverso: desempleo 10%, caida bolsa 55%, caida inmobiliario 40%",
+    "all_passed": true,
+    "minimum_cet1_post_stress": 9.9,
+    "banks_tested": 31,
+    "source": "Federal Reserve DFAST 2025",
+    "published": "2025-06-25"
+  },
+  "ecb_stress_2024": {
+    "scenario": "Adverso: recesion severa + shocks financieros",
+    "all_passed": true,
+    "minimum_cet1_post_stress": 10.5,
+    "banks_tested": 109,
+    "source": "ECB Supervisory Stress Test 2024",
+    "published": "2024-07-19"
+  }
+}

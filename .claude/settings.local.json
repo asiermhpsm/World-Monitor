@@ -42,7 +42,8 @@
       "Bash(python -c \"import app; print\\(''app.py OK''\\)\")",
       "Bash(python -c \"import app; print\\(''''app.py OK — all callbacks registered''''\\)\")",
       "Bash(python -c \"from modules.module_08_debt import render_module_8, register_callbacks_module_8; print\\(''Import OK''\\)\")",
-      "Bash(timeout 15 python -c \":*)"
+      "Bash(timeout 15 python -c \":*)",
+      "Bash(python -c \"from modules.module_09_financial_system import render_module_9, register_callbacks_module_9; print\\(''Importacion OK''\\)\")"
     ]
   }
 }

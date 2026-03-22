@@ -1,0 +1,21 @@
+{
+  "last_updated": "2026-01-01",
+  "source": "Bloomberg / S&P LCD estimaciones",
+  "total_us_corporate_debt_trillion": 13.7,
+  "high_yield_maturities_bn": {
+    "2026": 180,
+    "2027": 285,
+    "2028": 320,
+    "2029": 215,
+    "2030": 180,
+    "2031+": 145
+  },
+  "investment_grade_maturities_bn": {
+    "2026": 890,
+    "2027": 1150,
+    "2028": 980,
+    "2029": 850,
+    "2030": 720,
+    "2031+": 3200
+  }
+}
