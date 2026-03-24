@@ -1,0 +1,10 @@
+{
+  "last_updated": "2026-01-01",
+  "source": "Team Populism / V-Dem Institute estimaciones",
+  "populism_score_0_to_10": {
+    "USA": 6.8, "HUN": 8.5, "TUR": 7.9, "ITA": 6.2,
+    "FRA": 5.8, "DEU": 4.1, "ESP": 5.5, "GBR": 5.2,
+    "BRA": 7.1, "ARG": 6.5, "MEX": 5.9, "IND": 6.3,
+    "POL": 7.2, "SWE": 3.8, "NOR": 3.2, "JPN": 3.5
+  }
+}

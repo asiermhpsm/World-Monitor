@@ -1,0 +1,14 @@
+{
+  "last_updated": "2026-01-01",
+  "source": "McKinsey / Stanford HAI / MIT / industry reports",
+  "sector_impacts": [
+    {"sector": "Desarrollo de software", "metric": "Velocidad de generación de código", "impact_pct": 45, "confidence": "high"},
+    {"sector": "Diagnóstico médico por imagen", "metric": "Precisión diagnóstica", "impact_pct": 25, "confidence": "high"},
+    {"sector": "Drug discovery", "metric": "Reducción tiempo identificación candidatos", "impact_pct": 60, "confidence": "medium"},
+    {"sector": "Servicios legales (contratos)", "metric": "Velocidad revisión documentos", "impact_pct": 40, "confidence": "medium"},
+    {"sector": "Atención al cliente", "metric": "Reducción coste por interacción", "impact_pct": 30, "confidence": "high"},
+    {"sector": "Manufactura (control calidad)", "metric": "Reducción defectos", "impact_pct": 20, "confidence": "medium"},
+    {"sector": "Investigación académica", "metric": "Velocidad revisión literatura", "impact_pct": 35, "confidence": "medium"},
+    {"sector": "Marketing y publicidad", "metric": "Coste generación contenido", "impact_pct": 50, "confidence": "high"}
+  ]
+}

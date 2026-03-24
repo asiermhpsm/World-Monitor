@@ -1809,3 +1809,75 @@ def calculate_li_keqiang_proxy(country_iso3: str = "CHN") -> Optional[pd.Series]
     except Exception as exc:
         logger.debug("calculate_li_keqiang_proxy — combinación: %s", exc)
         return None
+
+
+# ── Demografía: comparativa entre países ──────────────────────────────────────
+
+def get_demographic_comparison(
+    indicator_series_id: str,
+    countries: list[str],
+    include_projections: bool = False,
+    projection_data: Optional[dict] = None,
+) -> pd.DataFrame:
+    """
+    Lee datos demográficos del World Bank para los países especificados.
+
+    - indicator_series_id: ID de la serie en time_series (ej. 'wb_sp_pop_totl_wld')
+      Se reemplaza la parte de país dinámicamente por cada código de país.
+    - countries: lista de códigos ISO3 (ej. ['JPN', 'DEU', 'ESP'])
+    - include_projections: si True y se proporciona projection_data, combina
+      los datos históricos con las proyecciones hasta 2050.
+    - projection_data: dict con estructura {iso3: {year_str: value}} para proyecciones.
+
+    Devuelve un DataFrame con años en índice y países en columnas.
+    Maneja correctamente la ausencia de datos con NaN.
+    """
+    import json
+    from pathlib import Path
+
+    result_frames: dict[str, pd.Series] = {}
+
+    for country in countries:
+        # Intentar leer de la BD — el indicator_id se construye reemplazando
+        # el último segmento por el código de país en minúsculas
+        series_id = indicator_series_id.replace("{country}", country.lower())
+        try:
+            df = get_series(series_id, days=25 * 365)
+            if df is not None and not df.empty:
+                df["timestamp"] = pd.to_datetime(df["timestamp"])
+                df["year"] = df["timestamp"].dt.year
+                # Agregado anual: media del año
+                annual = df.groupby("year")["value"].mean()
+                result_frames[country] = annual
+        except Exception as exc:
+            logger.debug("get_demographic_comparison(%s, %s): %s", series_id, country, exc)
+
+    if not result_frames:
+        # Devolver DataFrame vacío con columnas
+        return pd.DataFrame(columns=countries)
+
+    df_combined = pd.DataFrame(result_frames)
+    df_combined.index.name = "year"
+
+    # Combinar con proyecciones si se solicita
+    if include_projections and projection_data:
+        proj_frames: dict[str, pd.Series] = {}
+        for country in countries:
+            if country in projection_data:
+                proj = projection_data[country]
+                proj_series = pd.Series(
+                    {int(y): v for y, v in proj.items()},
+                    name=country,
+                )
+                proj_frames[country] = proj_series
+
+        if proj_frames:
+            df_proj = pd.DataFrame(proj_frames)
+            df_proj.index.name = "year"
+            # Solo añadir años futuros que no están ya en el histórico
+            max_hist_year = df_combined.index.max() if not df_combined.empty else 0
+            df_proj_future = df_proj[df_proj.index > max_hist_year]
+            df_combined = pd.concat([df_combined, df_proj_future])
+
+    df_combined = df_combined.sort_index()
+    return df_combined

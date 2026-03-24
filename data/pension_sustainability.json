@@ -1,0 +1,14 @@
+{
+  "last_updated": "2026-01-01",
+  "source": "OECD Pension Outlook / World Bank",
+  "countries": {
+    "JPN": {"level": "critical", "dependency_ratio": 52, "reform_year": 2004, "retirement_age": 65, "replacement_rate_pct": 34, "notes": "Sistema más presionado del mundo. Deflación agrava el problema."},
+    "DEU": {"level": "high_risk", "dependency_ratio": 40, "reform_year": 2007, "retirement_age": 67, "replacement_rate_pct": 43, "notes": "Reforma de 2007 aumentó edad de jubilación a 67. Presión creciente."},
+    "ESP": {"level": "high_risk", "dependency_ratio": 33, "reform_year": 2023, "retirement_age": 65, "replacement_rate_pct": 72, "notes": "Tasa de reemplazo muy alta (72%) — una de las más generosas de la OCDE. Insostenible a largo plazo con demografía actual."},
+    "ITA": {"level": "critical", "dependency_ratio": 38, "reform_year": 2011, "retirement_age": 67, "replacement_rate_pct": 64, "notes": "Gasto en pensiones >15% del PIB — el más alto de la UE."},
+    "FRA": {"level": "high_risk", "dependency_ratio": 35, "reform_year": 2023, "retirement_age": 64, "replacement_rate_pct": 60, "notes": "Reforma de 2023 (edad 64) generó protestas masivas."},
+    "USA": {"level": "moderate", "dependency_ratio": 27, "reform_year": 1983, "retirement_age": 67, "replacement_rate_pct": 39, "notes": "Social Security Trust Fund podría agotarse ~2034 sin reforma."},
+    "CHN": {"level": "emerging_risk", "dependency_ratio": 21, "reform_year": 2015, "retirement_age": 60, "replacement_rate_pct": 42, "notes": "Envejecimiento acelerado. Crisis inmobiliaria reduce ingresos fiscales locales que financian pensiones."},
+    "SWE": {"level": "sustainable", "dependency_ratio": 32, "reform_year": 1998, "retirement_age": 65, "replacement_rate_pct": 53, "notes": "Sistema de cuentas nocionales — el más reformado y sostenible de Europa."}
+  }
+}

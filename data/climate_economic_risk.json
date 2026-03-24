@@ -1,0 +1,12 @@
+{
+  "last_updated": "2026-01-01",
+  "source": "World Bank / Swiss Re / Network for Greening the Financial System",
+  "gdp_loss_scenarios": {
+    "+2C_2050": -2.0,
+    "+3C_2100": -10.0,
+    "+4C_2100": -23.0
+  },
+  "stranded_assets_trillion_usd": 20.0,
+  "insurance_losses_2025_bn": 280,
+  "most_vulnerable_regions": ["Bangladesh", "Pacific Islands", "Sahel", "South Asia coastal", "Mediterranean"]
+}

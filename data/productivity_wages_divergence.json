@@ -1,0 +1,17 @@
+{
+  "last_updated": "2026-01-01",
+  "source": "Economic Policy Institute / BLS / Fed",
+  "base_year": 1979,
+  "data": {
+    "1979": {"productivity": 100, "median_worker": 100, "top_1pct": 100},
+    "1985": {"productivity": 114, "median_worker": 101, "top_1pct": 135},
+    "1990": {"productivity": 122, "median_worker": 100, "top_1pct": 167},
+    "1995": {"productivity": 134, "median_worker": 101, "top_1pct": 204},
+    "2000": {"productivity": 162, "median_worker": 115, "top_1pct": 298},
+    "2005": {"productivity": 183, "median_worker": 116, "top_1pct": 315},
+    "2010": {"productivity": 205, "median_worker": 117, "top_1pct": 288},
+    "2015": {"productivity": 220, "median_worker": 122, "top_1pct": 348},
+    "2020": {"productivity": 240, "median_worker": 132, "top_1pct": 382},
+    "2024": {"productivity": 256, "median_worker": 138, "top_1pct": 420}
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "last_updated": "2026-01-01",
+  "estimates": [
+    {"institution": "Goldman Sachs (2023)", "gdp_impact_pct": 7.0, "horizon_years": 10, "confidence": "medium"},
+    {"institution": "McKinsey Global Institute", "gdp_impact_pct": 4.4, "horizon_years": 10, "confidence": "medium"},
+    {"institution": "OCDE (2023)", "gdp_impact_pct": 1.8, "horizon_years": 10, "confidence": "low"},
+    {"institution": "MIT Media Lab (2025)", "gdp_impact_pct": 0.2, "horizon_years": 3, "confidence": "high"},
+    {"institution": "Acemoglu (Nobel 2024)", "gdp_impact_pct": 0.5, "horizon_years": 10, "confidence": "medium"},
+    {"institution": "Bank of England", "gdp_impact_pct": 2.5, "horizon_years": 10, "confidence": "low"}
+  ]
+}

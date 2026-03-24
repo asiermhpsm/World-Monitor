@@ -53,7 +53,8 @@
       "Bash(python -c \"import app; print\\(''''app.py OK''''\\)\")",
       "Bash(python -c \"from modules.module_11_leading_indicators import render_module_11; r = render_module_11\\(\\); print\\(''''OK''''\\)\")",
       "Bash(python -c \"from modules.module_12_china import render_module_12, register_callbacks_module_12; print\\(''OK''\\)\")",
-      "Bash(python -c \"from modules.data_helpers import calculate_li_keqiang_proxy; print\\(''OK''\\)\")"
+      "Bash(python -c \"from modules.data_helpers import calculate_li_keqiang_proxy; print\\(''OK''\\)\")",
+      "Bash(python -c \"from modules.module_13_demographics import render_module_13, register_callbacks_module_13; print\\(''Import OK''\\)\")"
     ]
   }
 }
