@@ -1,0 +1,27 @@
+{
+  "last_updated": "2026-01-01",
+  "source": "NBS China / Rhodium Group estimaciones",
+  "residential_prices_yoy_pct": {
+    "2020": 4.8, "2021": 3.5, "2022": -1.5, "2023": -3.9,
+    "2024": -5.2, "2025": -4.1
+  },
+  "new_home_sales_yoy_pct": {
+    "2020": 3.2, "2021": -2.1, "2022": -28.3, "2023": -8.5,
+    "2024": -14.2, "2025": -6.3
+  },
+  "property_investment_yoy_pct": {
+    "2020": 7.0, "2021": 4.4, "2022": -10.0, "2023": -9.6,
+    "2024": -10.1, "2025": -7.2
+  },
+  "unsold_inventory_months": {
+    "2020": 5.2, "2021": 5.8, "2022": 8.9, "2023": 12.3,
+    "2024": 16.7, "2025": 18.2
+  },
+  "major_developer_defaults": [
+    {"name": "Evergrande", "date": "2021-12-09", "debt_bn_usd": 300},
+    {"name": "Sunac", "date": "2022-05-01", "debt_bn_usd": 92},
+    {"name": "Country Garden", "date": "2023-08-01", "debt_bn_usd": 187},
+    {"name": "Shimao", "date": "2022-01-01", "debt_bn_usd": 31},
+    {"name": "Kaisa", "date": "2021-12-01", "debt_bn_usd": 12}
+  ]
+}

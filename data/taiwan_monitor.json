@@ -1,0 +1,43 @@
+{
+  "last_updated": "2026-03-20",
+  "tension_level": "medium",
+  "tension_description": "Maniobras militares regulares. Sin escalada significativa en el contexto del conflicto con Irán.",
+  "recent_incidents": [
+    {"date": "2026-02-15", "description": "China realiza ejercicios navales en el Estrecho"},
+    {"date": "2026-01-10", "description": "Incursión de 45 aeronaves militares chinas en la zona de identificación aérea de Taiwán"},
+    {"date": "2025-12-08", "description": "EE.UU. aprueba venta de armas a Taiwán por valor de 1.3 mil millones de dólares"}
+  ],
+  "diplomatic_status": "Tensa pero sin escalada activa",
+  "us_military_presence": "Paso regular de buques de guerra por el Estrecho bajo la política de libre navegación",
+  "economic_interdependence": {
+    "taiwan_exports_to_china_pct": 25,
+    "tsmc_market_share_advanced_chips_pct": 90,
+    "global_semiconductor_revenue_taiwan_pct": 22
+  },
+  "scenarios": [
+    {
+      "name": "Statu Quo / Tensión sin Conflicto",
+      "probability_pct": 65,
+      "color": "green",
+      "description": "China continúa las presiones militares y diplomáticas pero no escala a conflicto abierto. Taiwán mantiene su autonomía de facto.",
+      "economic_impact": "Supply chains de semiconductores operativas. Prima de riesgo geopolítica moderada.",
+      "assets": "SOXX ±0%, TSMC ±0%, MCHI moderadamente afectado."
+    },
+    {
+      "name": "Escalada Sin Invasión",
+      "probability_pct": 20,
+      "color": "orange",
+      "description": "Bloqueo naval parcial, ejercicios militares masivos. Sin invasión pero con interrupción del comercio.",
+      "economic_impact": "Escasez de semiconductores, inflación tecnológica +5-10%, recesión industrial en EE.UU. y Europa.",
+      "assets": "SOXX -30 a -50%, MCHI -40%, VIX >50, Oro +20%."
+    },
+    {
+      "name": "Invasión",
+      "probability_pct": 15,
+      "color": "red",
+      "description": "Operación militar para tomar Taiwán. EE.UU. respondería con sanciones masivas y potencialmente con fuerza militar.",
+      "economic_impact": "Crisis global de semiconductores. Recesión severa mundial. Probable fin del sistema de comercio global tal como lo conocemos.",
+      "assets": "Colapso generalizado de mercados. No hay activo refugio suficiente."
+    }
+  ]
+}

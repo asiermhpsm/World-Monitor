@@ -1716,3 +1716,96 @@ def get_indicator_history_for_dashboard(weeks: int = 52) -> pd.DataFrame:
     except Exception as exc:
         logger.debug("get_indicator_history_for_dashboard: %s", exc)
         return pd.DataFrame(columns=["semana", "n_normal", "n_attention", "n_alert", "n_critical"])
+
+
+# ── Índice Li Keqiang (proxy) ──────────────────────────────────────────────────
+
+def calculate_li_keqiang_proxy(country_iso3: str = "CHN") -> Optional[pd.Series]:
+    """
+    Proxy del índice Li Keqiang para China.
+
+    Combina:
+      - Consumo energético per cápita (EG.USE.PCAP.KG.OE) → variación YoY → peso 40%
+      - Comercio como % del PIB (NE.TRD.GNFS.ZS) → variación YoY → peso 30%
+      - ETF MCHI como proxy del crédito bancario → variación YoY → peso 30%
+
+    Devuelve una pd.Series con índice DatetimeIndex y valores en % (comparable al PIB YoY).
+    Devuelve None si hay menos de 2 componentes disponibles.
+    """
+    iso = country_iso3.upper()
+    components: list[tuple[pd.Series, float, str]] = []
+
+    # Componente 1: consumo energético
+    try:
+        energy_id = f"wb_energy_use_per_capita_{iso.lower()}"
+        energy_df = get_series(energy_id, days=12000)
+        if energy_df is not None and not energy_df.empty:
+            s = energy_df.set_index("timestamp")["value"].dropna()
+            s_annual = s.resample("A").mean().dropna()
+            yoy = s_annual.pct_change(1) * 100
+            yoy = yoy.dropna()
+            if len(yoy) >= 3:
+                components.append((yoy, 0.40, "energia"))
+    except Exception as exc:
+        logger.debug("LK proxy — energía: %s", exc)
+
+    # Componente 2: comercio como % PIB
+    try:
+        trade_id = f"wb_trade_pct_gdp_{iso.lower()}"
+        trade_df = get_series(trade_id, days=12000)
+        if trade_df is not None and not trade_df.empty:
+            s = trade_df.set_index("timestamp")["value"].dropna()
+            s_annual = s.resample("A").mean().dropna()
+            yoy = s_annual.pct_change(1) * 100
+            yoy = yoy.dropna()
+            if len(yoy) >= 3:
+                components.append((yoy, 0.30, "comercio"))
+    except Exception as exc:
+        logger.debug("LK proxy — comercio: %s", exc)
+
+    # Componente 3: ETF MCHI como proxy crédito/bolsa china
+    try:
+        mchi_df = get_series("yf_mchi_close", days=5000)
+        if mchi_df is not None and not mchi_df.empty:
+            s = mchi_df.set_index("timestamp")["value"].dropna()
+            s_annual = s.resample("A").last().dropna()
+            yoy = s_annual.pct_change(1) * 100
+            yoy = yoy.dropna()
+            if len(yoy) >= 3:
+                components.append((yoy, 0.30, "credito"))
+    except Exception as exc:
+        logger.debug("LK proxy — MCHI: %s", exc)
+
+    if len(components) < 2:
+        logger.info(
+            "calculate_li_keqiang_proxy: solo %d componentes disponibles (mínimo 2). "
+            "Proxy no calculado.", len(components)
+        )
+        return None
+
+    # Normalizar pesos a 1.0 con los componentes disponibles
+    total_weight = sum(w for _, w, _ in components)
+    if total_weight == 0:
+        return None
+
+    # Alinear todas las series en un índice común
+    try:
+        all_series = [comp.rename(name) for comp, _, name in components]
+        df_all = pd.concat(all_series, axis=1).dropna(how="all")
+
+        result = pd.Series(0.0, index=df_all.index)
+        for (comp_series, weight, name) in components:
+            reindexed = comp_series.reindex(df_all.index)
+            norm_weight = weight / total_weight
+            result = result.add(reindexed.fillna(0) * norm_weight)
+
+        # Eliminar filas donde todos los componentes eran NaN
+        valid_mask = df_all.notna().any(axis=1)
+        result = result[valid_mask].dropna()
+
+        if result.empty:
+            return None
+        return result
+    except Exception as exc:
+        logger.debug("calculate_li_keqiang_proxy — combinación: %s", exc)
+        return None

@@ -1,0 +1,21 @@
+{
+  "last_updated": "2026-01-01",
+  "source": "General Administration of Customs China / World Bank",
+  "trade_balance_bn_usd": {
+    "2010": 183, "2012": 231, "2014": 383, "2016": 510,
+    "2018": 352, "2020": 524, "2021": 676, "2022": 878,
+    "2023": 823, "2024": 992, "2025": 1050
+  },
+  "exports_by_destination_pct_2025": {
+    "USA": 14.8, "EU": 16.2, "ASEAN": 16.5, "Japan": 4.2,
+    "South Korea": 4.1, "Russia": 3.8, "Other": 40.4
+  },
+  "top_export_products_2025": [
+    {"product": "Electrónica y maquinaria", "pct": 44},
+    {"product": "Vehículos y transporte", "pct": 11},
+    {"product": "Metales y minerales", "pct": 8},
+    {"product": "Textil y calzado", "pct": 7},
+    {"product": "Productos químicos", "pct": 6},
+    {"product": "Otros", "pct": 24}
+  ]
+}

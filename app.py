@@ -25,6 +25,7 @@ from modules.module_08_debt import register_callbacks_module_8, render_module_8
 from modules.module_09_financial_system import register_callbacks_module_9, render_module_9
 from modules.module_10_geopolitics import register_callbacks_module_10, render_module_10
 from modules.module_11_leading_indicators import register_callbacks_module_11, render_module_11
+from modules.module_12_china import register_callbacks_module_12, render_module_12
 from components.scheduler_status import (
     build_alerts_bar,
     build_scheduler_panel,
@@ -453,6 +454,8 @@ def render_page(pathname):
             return render_module_10()
         if n == 11:
             return render_module_11()
+        if n == 12:
+            return render_module_12()
         return build_module_placeholder(n)
 
     # Cualquier otra ruta → 404
@@ -551,6 +554,7 @@ register_callbacks_module_8(app)
 register_callbacks_module_9(app)
 register_callbacks_module_10(app)
 register_callbacks_module_11(app)
+register_callbacks_module_12(app)
 
 
 # ── Arranque ──────────────────────────────────────────────────────────────────
