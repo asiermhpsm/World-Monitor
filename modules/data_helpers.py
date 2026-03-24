@@ -1329,3 +1329,390 @@ def get_nfp_history(months: int = 24) -> pd.DataFrame:
     df = df.rename(columns={"timestamp": "fecha", "value": "nfp_level"})
     df = df.tail(months).reset_index(drop=True)
     return df[["fecha", "nfp_level", "nfp_mom", "avg_3m", "avg_12m"]]
+
+
+# ── Indicadores Adelantados (Módulo 11) ────────────────────────────────────────
+
+def calculate_recession_probability() -> dict:
+    """
+    Calcula la probabilidad de recesión en los próximos 12 meses.
+
+    Modelo de puntos:
+      T10Y2Y < 0           → +30 pts
+      Sahm >= 0.5          → +40 pts  (o +20 si >= 0.3)
+      LEI caída >4% 6m     → +20 pts
+      ICSA media4s > 300k  → +15 pts
+      STLFSI4 > 2          → +20 pts  (o +10 si > 1)
+    Cap: 95%
+
+    Retorna dict: probability, level, components, interpretation
+    """
+    pts = 0
+    max_pts = 135  # suma máxima posible
+    available_pts = 0
+    components = []
+
+    # 1. Curva T10Y2Y
+    t10y2y, _ = get_latest_value("fred_t10y2y_us")
+    if t10y2y is not None:
+        available_pts += 30
+        if t10y2y < 0:
+            pts += 30
+            components.append({"name": "Curva 10Y-2Y", "value": f"{t10y2y:.2f}%", "contribution": 30, "alert": True})
+        else:
+            components.append({"name": "Curva 10Y-2Y", "value": f"{t10y2y:.2f}%", "contribution": 0, "alert": False})
+
+    # 2. Regla de Sahm
+    sahm_val, _, _ = calculate_sahm_indicator()
+    if sahm_val is not None:
+        available_pts += 40
+        if sahm_val >= 0.5:
+            pts += 40
+            components.append({"name": "Regla de Sahm", "value": f"{sahm_val:.2f}", "contribution": 40, "alert": True})
+        elif sahm_val >= 0.3:
+            pts += 20
+            components.append({"name": "Regla de Sahm", "value": f"{sahm_val:.2f}", "contribution": 20, "alert": True})
+        else:
+            components.append({"name": "Regla de Sahm", "value": f"{sahm_val:.2f}", "contribution": 0, "alert": False})
+
+    # 3. LEI tendencia (USSLIND)
+    lei_df = get_series("fred_lei_us", days=210)
+    if not lei_df.empty and len(lei_df) >= 6:
+        lei_df = lei_df.sort_values("timestamp")
+        lei_current = float(lei_df.iloc[-1]["value"])
+        lei_6m_ago  = float(lei_df.iloc[-6]["value"])
+        available_pts += 20
+        if lei_6m_ago != 0:
+            lei_chg = (lei_current - lei_6m_ago) / abs(lei_6m_ago) * 100
+            if lei_chg < -4:
+                pts += 20
+                components.append({"name": "LEI (6m cambio)", "value": f"{lei_chg:.1f}%", "contribution": 20, "alert": True})
+            else:
+                components.append({"name": "LEI (6m cambio)", "value": f"{lei_chg:.1f}%", "contribution": 0, "alert": False})
+
+    # 4. Solicitudes desempleo ICSA (media 4 semanas)
+    icsa_df = get_series("fred_jobless_claims_us", days=40)
+    if not icsa_df.empty and len(icsa_df) >= 4:
+        icsa_df = icsa_df.sort_values("timestamp")
+        icsa_4w = float(icsa_df.tail(4)["value"].mean())
+        available_pts += 15
+        if icsa_4w > 300_000:
+            pts += 15
+            components.append({"name": "Solicitudes desempleo (4s)", "value": f"{icsa_4w:,.0f}", "contribution": 15, "alert": True})
+        else:
+            components.append({"name": "Solicitudes desempleo (4s)", "value": f"{icsa_4w:,.0f}", "contribution": 0, "alert": False})
+
+    # 5. STLFSI4
+    stlfsi, _ = get_latest_value("fred_financial_stress_us")
+    if stlfsi is not None:
+        available_pts += 20
+        if stlfsi > 2:
+            pts += 20
+            components.append({"name": "STLFSI4", "value": f"{stlfsi:.2f}", "contribution": 20, "alert": True})
+        elif stlfsi > 1:
+            pts += 10
+            components.append({"name": "STLFSI4", "value": f"{stlfsi:.2f}", "contribution": 10, "alert": True})
+        else:
+            components.append({"name": "STLFSI4", "value": f"{stlfsi:.2f}", "contribution": 0, "alert": False})
+
+    # Calcular probabilidad proporcional
+    if available_pts == 0:
+        prob = 0.0
+    else:
+        prob = min(95.0, (pts / available_pts) * 100)
+
+    if prob < 15:
+        level = "green"
+        interp = "Riesgo de recesión bajo. Los indicadores adelantados no señalan deterioro inminente."
+    elif prob < 30:
+        level = "yellow_green"
+        interp = "Riesgo de recesión moderado-bajo. Algunos indicadores merecen seguimiento."
+    elif prob < 50:
+        level = "yellow"
+        interp = "Riesgo de recesión moderado. Varios indicadores adelantados muestran señales de alerta."
+    elif prob < 70:
+        level = "orange"
+        interp = "Riesgo de recesión elevado. La mayoría de indicadores apuntan a desaceleración significativa."
+    else:
+        level = "red"
+        interp = "Riesgo de recesión muy alto. Los indicadores adelantados señalan recesión probable en los próximos 12 meses."
+
+    return {
+        "probability": round(prob, 1),
+        "level": level,
+        "components": components,
+        "interpretation": interp,
+        "pts": pts,
+        "available_pts": available_pts,
+    }
+
+
+def calculate_inflation_pressure() -> dict:
+    """
+    Calcula el índice de presión inflacionaria (0-100).
+
+    Componentes:
+      IPP YoY > 3%         → +20 pts
+      T5YIE > 2.5%         → +20 pts
+      Crecimiento salarial > 4.5% → +20 pts
+      Brent YoY > +20%     → +20 pts
+      Cobre YoY > +15%     → +20 pts
+
+    Retorna dict: index, level, components, interpretation
+    """
+    pts = 0
+    available_pts = 0
+    components = []
+
+    # 1. IPP YoY
+    ppi_val, ppi_prev, _, _ = get_change("fred_ppi_us", period_days=365)
+    if ppi_val is not None and ppi_prev is not None and ppi_prev != 0:
+        ppi_yoy = (ppi_val - ppi_prev) / abs(ppi_prev) * 100
+        available_pts += 20
+        if ppi_yoy > 3:
+            pts += 20
+            components.append({"name": "IPP (YoY)", "value": f"{ppi_yoy:.1f}%", "contribution": 20, "alert": True})
+        elif ppi_yoy > 0:
+            pts += 10
+            components.append({"name": "IPP (YoY)", "value": f"{ppi_yoy:.1f}%", "contribution": 10, "alert": True})
+        else:
+            components.append({"name": "IPP (YoY)", "value": f"{ppi_yoy:.1f}%", "contribution": 0, "alert": False})
+
+    # 2. Expectativas inflación 5Y
+    t5yie, _ = get_latest_value("fred_inflation_exp_5y_us")
+    if t5yie is not None:
+        available_pts += 20
+        if t5yie > 3:
+            pts += 20
+            components.append({"name": "Expectativas 5Y (T5YIE)", "value": f"{t5yie:.2f}%", "contribution": 20, "alert": True})
+        elif t5yie > 2.5:
+            pts += 10
+            components.append({"name": "Expectativas 5Y (T5YIE)", "value": f"{t5yie:.2f}%", "contribution": 10, "alert": True})
+        else:
+            components.append({"name": "Expectativas 5Y (T5YIE)", "value": f"{t5yie:.2f}%", "contribution": 0, "alert": False})
+
+    # 3. Crecimiento salarial (CES0500000003 YoY)
+    wage_val, wage_prev, _, _ = get_change("fred_wages_us", period_days=365)
+    if wage_val is not None and wage_prev is not None and wage_prev != 0:
+        wage_yoy = (wage_val - wage_prev) / abs(wage_prev) * 100
+        available_pts += 20
+        if wage_yoy > 5:
+            pts += 20
+            components.append({"name": "Crecimiento salarial (YoY)", "value": f"{wage_yoy:.1f}%", "contribution": 20, "alert": True})
+        elif wage_yoy > 4.5:
+            pts += 10
+            components.append({"name": "Crecimiento salarial (YoY)", "value": f"{wage_yoy:.1f}%", "contribution": 10, "alert": True})
+        else:
+            components.append({"name": "Crecimiento salarial (YoY)", "value": f"{wage_yoy:.1f}%", "contribution": 0, "alert": False})
+
+    # 4. Brent YoY
+    brent_val, brent_prev, _, _ = get_change("yf_bz_close", period_days=365)
+    if brent_val is not None and brent_prev is not None and brent_prev != 0:
+        brent_yoy = (brent_val - brent_prev) / abs(brent_prev) * 100
+        available_pts += 20
+        if brent_yoy > 20:
+            pts += 20
+            components.append({"name": "Brent (YoY)", "value": f"{brent_yoy:+.1f}%", "contribution": 20, "alert": True})
+        elif brent_yoy > 10:
+            pts += 10
+            components.append({"name": "Brent (YoY)", "value": f"{brent_yoy:+.1f}%", "contribution": 10, "alert": True})
+        else:
+            components.append({"name": "Brent (YoY)", "value": f"{brent_yoy:+.1f}%", "contribution": 0, "alert": False})
+
+    # 5. Cobre YoY
+    copper_val, copper_prev, _, _ = get_change("yf_hg_close", period_days=365)
+    if copper_val is not None and copper_prev is not None and copper_prev != 0:
+        copper_yoy = (copper_val - copper_prev) / abs(copper_prev) * 100
+        available_pts += 20
+        if copper_yoy > 15:
+            pts += 20
+            components.append({"name": "Cobre (YoY)", "value": f"{copper_yoy:+.1f}%", "contribution": 20, "alert": True})
+        elif copper_yoy > 5:
+            pts += 10
+            components.append({"name": "Cobre (YoY)", "value": f"{copper_yoy:+.1f}%", "contribution": 10, "alert": True})
+        else:
+            components.append({"name": "Cobre (YoY)", "value": f"{copper_yoy:+.1f}%", "contribution": 0, "alert": False})
+
+    if available_pts == 0:
+        idx = 0.0
+    else:
+        idx = min(100.0, (pts / available_pts) * 100)
+
+    if idx < 25:
+        level = "green"
+        interp = "Presión inflacionaria baja. Los indicadores no anticipan repunte de inflación próximo."
+    elif idx < 50:
+        level = "yellow"
+        interp = "Presión inflacionaria moderada. Algunos indicadores señalan posible repunte de inflación."
+    elif idx < 75:
+        level = "orange"
+        interp = "Presión inflacionaria alta. Varios indicadores sugieren que la inflación puede acelerarse."
+    else:
+        level = "red"
+        interp = "Presión inflacionaria muy alta. Los indicadores anticipan un repunte significativo de la inflación."
+
+    return {
+        "index": round(idx, 1),
+        "level": level,
+        "components": components,
+        "interpretation": interp,
+    }
+
+
+def generate_indicator_summary() -> dict:
+    """
+    Genera un resumen narrativo del estado de todos los indicadores adelantados.
+
+    Retorna dict: text, counts (por nivel), top3_concerns
+    """
+    from datetime import date
+
+    rec = calculate_recession_probability()
+    fin = calculate_systemic_risk_index()
+    inf = calculate_inflation_pressure()
+
+    gpr_val, _ = get_latest_value("fred_gpr_gprc")
+
+    # Mapa nivel → número
+    _level_order = {"green": 0, "yellow_green": 1, "yellow": 2, "orange": 3, "red": 4}
+
+    concerns = []
+    concerns.append({"name": "Riesgo recesión", "level": rec["level"], "value": f"{rec['probability']:.0f}%"})
+    fin_level = fin.get("level", "gray")
+    fin_idx   = fin.get("composite_index", fin.get("index", 0))
+    concerns.append({"name": "Riesgo sistémico", "level": fin_level, "value": f"{fin_idx:.0f}/100"})
+    concerns.append({"name": "Presión inflacionaria", "level": inf["level"], "value": f"{inf['index']:.0f}/100"})
+    if gpr_val is not None:
+        gpr_level = "green" if gpr_val < 100 else ("yellow" if gpr_val < 150 else ("orange" if gpr_val < 200 else "red"))
+        concerns.append({"name": "GPR Global", "level": gpr_level, "value": f"{gpr_val:.0f}"})
+
+    counts = {"green": 0, "yellow_green": 0, "yellow": 0, "orange": 0, "red": 0}
+    for c in concerns:
+        lv = c["level"]
+        if lv in counts:
+            counts[lv] += 1
+
+    n_alert = counts["orange"] + counts["red"]
+    n_total = len(concerns)
+
+    top3 = sorted(concerns, key=lambda x: _level_order.get(x["level"], 0), reverse=True)[:3]
+
+    today_str = date.today().strftime("%d de %B de %Y")
+
+    parts = [f"A {today_str}, {n_alert} de {n_total} indicadores principales muestran señal de alerta o crítica."]
+
+    if top3:
+        top_names = ", ".join(f"{c['name']} ({c['value']})" for c in top3 if _level_order.get(c["level"], 0) >= 2)
+        if top_names:
+            parts.append(f"Los más preocupantes son: {top_names}.")
+
+    if rec["probability"] >= 50:
+        parts.append(f"La probabilidad de recesión estimada es del {rec['probability']:.0f}%: {rec['interpretation']}")
+    else:
+        parts.append(f"El riesgo de recesión es del {rec['probability']:.0f}%, nivel {rec['level']}.")
+
+    sahm_val, sahm_lvl, _ = calculate_sahm_indicator()
+    if sahm_val is not None:
+        if sahm_val >= 0.5:
+            parts.append(f"La Regla de Sahm ({sahm_val:.2f}) está en zona de recesión activa.")
+        else:
+            parts.append(f"La Regla de Sahm ({sahm_val:.2f}) no señala recesión en curso.")
+
+    t5yie, _ = get_latest_value("fred_inflation_exp_5y_us")
+    if t5yie is not None:
+        if t5yie > 3:
+            parts.append(f"Las expectativas de inflación a 5 años ({t5yie:.2f}%) están desancladas por encima del 3%.")
+        else:
+            parts.append(f"Las expectativas de inflación a 5 años ({t5yie:.2f}%) permanecen relativamente ancladas.")
+
+    text = " ".join(parts)
+
+    return {
+        "text": text,
+        "counts": counts,
+        "top3_concerns": top3,
+        "recession_prob": rec["probability"],
+        "systemic_risk": fin_idx,
+        "inflation_pressure": inf["index"],
+    }
+
+
+def get_indicator_history_for_dashboard(weeks: int = 52) -> pd.DataFrame:
+    """
+    Para cada semana de los últimos N semanas, calcula el estado de los indicadores
+    clave del cuadro de mando y devuelve la composición semanal.
+
+    Retorna DataFrame: semana, n_normal, n_attention, n_alert, n_critical
+    """
+    try:
+        now = datetime.utcnow()
+        records = []
+
+        for w in range(weeks, -1, -1):
+            week_end = now - timedelta(weeks=w)
+            week_start = week_end - timedelta(days=7)
+            n_normal = 0
+            n_attention = 0
+            n_alert = 0
+            n_critical = 0
+
+            def _get_val_at(series_id: str, dt: datetime) -> Optional[float]:
+                try:
+                    with SessionLocal() as db:
+                        row = (
+                            db.query(TimeSeries)
+                            .filter(
+                                TimeSeries.indicator_id == series_id,
+                                TimeSeries.timestamp <= dt,
+                            )
+                            .order_by(TimeSeries.timestamp.desc())
+                            .first()
+                        )
+                    return float(row.value) if row and row.value is not None else None
+                except Exception:
+                    return None
+
+            # T10Y2Y
+            t10y2y = _get_val_at("fred_t10y2y_us", week_end)
+            if t10y2y is not None:
+                if t10y2y < -0.5:   n_critical += 1
+                elif t10y2y < 0:    n_alert += 1
+                elif t10y2y < 0.5:  n_attention += 1
+                else:               n_normal += 1
+
+            # VIX
+            vix = _get_val_at("yf_vix_close", week_end)
+            if vix is not None:
+                if vix > 35:    n_critical += 1
+                elif vix > 25:  n_alert += 1
+                elif vix > 18:  n_attention += 1
+                else:           n_normal += 1
+
+            # STLFSI4
+            stlfsi = _get_val_at("fred_financial_stress_us", week_end)
+            if stlfsi is not None:
+                if stlfsi > 2:    n_critical += 1
+                elif stlfsi > 1:  n_alert += 1
+                elif stlfsi > 0:  n_attention += 1
+                else:             n_normal += 1
+
+            # T5YIE
+            t5yie = _get_val_at("fred_inflation_exp_5y_us", week_end)
+            if t5yie is not None:
+                if t5yie > 3:     n_critical += 1
+                elif t5yie > 2.5: n_alert += 1
+                elif t5yie > 2.3: n_attention += 1
+                else:             n_normal += 1
+
+            records.append({
+                "semana": week_end,
+                "n_normal": n_normal,
+                "n_attention": n_attention,
+                "n_alert": n_alert,
+                "n_critical": n_critical,
+            })
+
+        return pd.DataFrame(records)
+    except Exception as exc:
+        logger.debug("get_indicator_history_for_dashboard: %s", exc)
+        return pd.DataFrame(columns=["semana", "n_normal", "n_attention", "n_alert", "n_critical"])

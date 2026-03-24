@@ -47,7 +47,11 @@
       "Bash(python -c \"from modules.module_10_geopolitics import render_module_10, register_callbacks_module_10; print\\(''OK''\\)\")",
       "Bash(python -c \"from modules.data_helpers import get_conflict_asset_impact, calculate_gpr_percentile; print\\(''helpers OK''\\)\")",
       "Bash(python -c \"import app; print\\(''app OK''\\)\")",
-      "Bash(python -c \"from modules.module_10_geopolitics import render_module_10; print\\(''OK''\\)\")"
+      "Bash(python -c \"from modules.module_10_geopolitics import render_module_10; print\\(''OK''\\)\")",
+      "Bash(python -c \"from modules.data_helpers import calculate_recession_probability, calculate_inflation_pressure, generate_indicator_summary, get_indicator_history_for_dashboard; print\\(''OK''\\)\")",
+      "Bash(python -c \"from modules.module_11_leading_indicators import render_module_11, register_callbacks_module_11; print\\(''OK''\\)\")",
+      "Bash(python -c \"import app; print\\(''''app.py OK''''\\)\")",
+      "Bash(python -c \"from modules.module_11_leading_indicators import render_module_11; r = render_module_11\\(\\); print\\(''''OK''''\\)\")"
     ]
   }
 }

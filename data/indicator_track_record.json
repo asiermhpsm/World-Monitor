@@ -1,0 +1,69 @@
+{
+  "last_updated": "2026-03-24",
+  "indicators": [
+    {
+      "name": "Inversión curva 10Y-2Y",
+      "total_signals": 7,
+      "true_positives": 7,
+      "false_positives": 0,
+      "avg_lead_time_months": 14,
+      "notes": "Precisión histórica perfecta en EE.UU. desde 1970, aunque con adelanto variable de 6-24 meses"
+    },
+    {
+      "name": "Regla de Sahm",
+      "total_signals": 11,
+      "true_positives": 11,
+      "false_positives": 0,
+      "avg_lead_time_months": 0,
+      "notes": "Indicador coincidente, no adelantado. Confirma recesión cuando ya ha empezado."
+    },
+    {
+      "name": "LEI caída >4% en 6 meses",
+      "total_signals": 9,
+      "true_positives": 8,
+      "false_positives": 1,
+      "avg_lead_time_months": 8,
+      "notes": "Una falsa alarma en 1995-1996. Alta fiabilidad general."
+    },
+    {
+      "name": "Spread HY > 700pb",
+      "total_signals": 4,
+      "true_positives": 4,
+      "false_positives": 0,
+      "avg_lead_time_months": 2,
+      "notes": "Señal tardía pero muy fiable. Cuando el HY supera 700pb, la crisis ya está en marcha."
+    },
+    {
+      "name": "VIX > 35",
+      "total_signals": 12,
+      "true_positives": 8,
+      "false_positives": 4,
+      "avg_lead_time_months": 1,
+      "notes": "Señal muy ruidosa. Muchos spikes del VIX no derivaron en recesión (ej: agosto 2024)."
+    },
+    {
+      "name": "T10Y3M invertida",
+      "total_signals": 7,
+      "true_positives": 7,
+      "false_positives": 0,
+      "avg_lead_time_months": 12,
+      "notes": "Modelo de la Fed de Nueva York. Alta fiabilidad con señal algo más temprana que el spread 10Y-2Y."
+    },
+    {
+      "name": "Permisos construcción caída >20%",
+      "total_signals": 9,
+      "true_positives": 7,
+      "false_positives": 2,
+      "avg_lead_time_months": 6,
+      "notes": "Sector inmobiliario muy sensible a tipos. Dos falsas alarmas en ciclos de subidas moderadas."
+    },
+    {
+      "name": "STLFSI4 > 1",
+      "total_signals": 8,
+      "true_positives": 6,
+      "false_positives": 2,
+      "avg_lead_time_months": 3,
+      "notes": "Indicador de estrés financiero. Señal más tardía que la curva pero confirma deterioro sistémico."
+    }
+  ]
+}
