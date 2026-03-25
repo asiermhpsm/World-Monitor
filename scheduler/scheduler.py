@@ -594,8 +594,72 @@ class DashboardScheduler:
                 "eurusd":            latest("yf_eurusd_close"),
                 # Geopolítica
                 "gpr_global":        latest("fred_gpr_global"),
+                # Estrés financiero
+                "stlfsi":            latest("fred_stlfsi_us"),
+                # Regla de Sahm
+                "sahm_rule":         latest("fred_sahm_rule_us"),
             }
             return {k: v for k, v in snapshot.items()}
+        finally:
+            conn.close()
+
+    def take_manual_snapshot(self, label: Optional[str] = None) -> bool:
+        """
+        Guarda un snapshot inmediato con etiqueta opcional.
+        Usa datetime completo como clave para permitir múltiples snapshots por día.
+        """
+        logger.info("[Scheduler] Iniciando snapshot manual (label=%s)...", label)
+        try:
+            snapshot_data = self._collect_snapshot_data()
+            if label:
+                snapshot_data["label"] = label
+            snapshot_data["trigger"] = "manual"
+            now_str = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S")
+
+            conn = sqlite3.connect(str(DB_PATH))
+            try:
+                conn.execute(
+                    """INSERT OR REPLACE INTO SnapshotHistory
+                       (snapshot_date, snapshot_data, created_at)
+                       VALUES (?, ?, ?)""",
+                    (now_str, json.dumps(snapshot_data, default=str), datetime.utcnow().isoformat()),
+                )
+                conn.commit()
+                logger.info("[Scheduler] Snapshot manual guardado: %s", now_str)
+                return True
+            finally:
+                conn.close()
+        except Exception as e:
+            logger.error("[Scheduler] Error en snapshot manual: %s", e)
+            return False
+
+    def get_snapshots(self, limit: int = 50) -> list:
+        """Devuelve los snapshots más recientes de SnapshotHistory."""
+        conn = sqlite3.connect(str(DB_PATH))
+        conn.row_factory = sqlite3.Row
+        try:
+            rows = conn.execute(
+                """SELECT id, snapshot_date, snapshot_data, created_at
+                   FROM SnapshotHistory
+                   ORDER BY snapshot_date DESC
+                   LIMIT ?""",
+                (limit,),
+            ).fetchall()
+            result = []
+            for row in rows:
+                try:
+                    data = json.loads(row["snapshot_data"])
+                except Exception:
+                    data = {}
+                result.append({
+                    "id": row["id"],
+                    "snapshot_date": row["snapshot_date"],
+                    "label": data.get("label", ""),
+                    "trigger": data.get("trigger", "scheduled"),
+                    "created_at": row["created_at"],
+                    "data": data,
+                })
+            return result
         finally:
             conn.close()
 

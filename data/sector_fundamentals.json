@@ -1,0 +1,17 @@
+{
+  "last_updated": "2026-03-01",
+  "source": "FactSet / Bloomberg estimaciones",
+  "sectors": {
+    "XLK":  {"name": "Tecnología",             "forward_pe": 28.5, "earnings_growth_est_pct": 18.2, "dividend_yield_pct": 0.8, "weight_sp500_pct": 31.2},
+    "XLE":  {"name": "Energía",                "forward_pe": 12.1, "earnings_growth_est_pct":  8.5, "dividend_yield_pct": 3.8, "weight_sp500_pct":  3.8},
+    "XLF":  {"name": "Financiero",             "forward_pe": 15.2, "earnings_growth_est_pct":  9.1, "dividend_yield_pct": 1.9, "weight_sp500_pct": 13.1},
+    "XLV":  {"name": "Salud",                  "forward_pe": 18.9, "earnings_growth_est_pct": 11.3, "dividend_yield_pct": 1.6, "weight_sp500_pct": 11.5},
+    "XLP":  {"name": "Consumo básico",         "forward_pe": 20.1, "earnings_growth_est_pct":  5.8, "dividend_yield_pct": 2.7, "weight_sp500_pct":  5.8},
+    "XLY":  {"name": "Consumo discrecional",   "forward_pe": 24.3, "earnings_growth_est_pct": 14.7, "dividend_yield_pct": 0.9, "weight_sp500_pct": 10.2},
+    "XLB":  {"name": "Materiales",             "forward_pe": 19.8, "earnings_growth_est_pct":  7.2, "dividend_yield_pct": 1.8, "weight_sp500_pct":  2.4},
+    "XLI":  {"name": "Industrial",             "forward_pe": 21.5, "earnings_growth_est_pct": 10.4, "dividend_yield_pct": 1.4, "weight_sp500_pct":  8.4},
+    "XLU":  {"name": "Utilities",              "forward_pe": 17.2, "earnings_growth_est_pct":  6.1, "dividend_yield_pct": 3.1, "weight_sp500_pct":  2.4},
+    "XLRE": {"name": "Inmobiliario REITs",     "forward_pe": 38.1, "earnings_growth_est_pct":  4.3, "dividend_yield_pct": 3.8, "weight_sp500_pct":  2.3},
+    "XLC":  {"name": "Comunicaciones",         "forward_pe": 20.8, "earnings_growth_est_pct": 15.1, "dividend_yield_pct": 1.1, "weight_sp500_pct":  8.9}
+  }
+}

@@ -22,6 +22,53 @@ from database.database import (
 logger = logging.getLogger(__name__)
 
 
+# ── Contexto temporal ("viaje en el tiempo") ───────────────────────────────────
+
+# Variable global que controla el filtro de fecha para todas las queries.
+# None = modo normal (datos más recientes)
+# datetime = modo histórico (datos hasta esa fecha)
+_time_context: Optional[datetime] = None
+
+
+def set_time_context(date=None) -> None:
+    """
+    Activa o desactiva el modo 'viaje en el tiempo'.
+
+    Args:
+        date: None → modo normal (datos actuales)
+              str "YYYY-MM-DD" o datetime → modo histórico, filtra datos <= date
+    """
+    global _time_context
+    if date is None:
+        _time_context = None
+        logger.info("[TimeContext] Modo normal (datos actuales)")
+        return
+    if isinstance(date, str):
+        # Acepta "YYYY-MM-DD" o "YYYY-MM-DDTHH:MM:SS"
+        try:
+            if "T" in date or " " in date:
+                _time_context = datetime.fromisoformat(date.replace(" ", "T"))
+            else:
+                _time_context = datetime.strptime(date, "%Y-%m-%d").replace(
+                    hour=23, minute=59, second=59
+                )
+        except ValueError:
+            logger.warning("[TimeContext] Fecha inválida: %s", date)
+            _time_context = None
+            return
+    elif isinstance(date, datetime):
+        _time_context = date
+    else:
+        logger.warning("[TimeContext] Tipo no soportado: %s", type(date))
+        return
+    logger.info("[TimeContext] Modo histórico activado: %s", _time_context)
+
+
+def get_time_context() -> Optional[datetime]:
+    """Devuelve el contexto temporal activo, o None si está en modo normal."""
+    return _time_context
+
+
 # ── Lectura de series temporales ───────────────────────────────────────────────
 
 def get_latest_value(
@@ -30,13 +77,17 @@ def get_latest_value(
 ) -> Tuple[Optional[float], Optional[datetime]]:
     """
     Devuelve (valor, timestamp) del dato mas reciente de una serie.
+    Si hay contexto temporal activo, filtra por timestamp <= context_date.
     Retorna (None, None) si no existe o hay error.
     """
     try:
+        ctx = _time_context
         with SessionLocal() as db:
             q = db.query(TimeSeries).filter(TimeSeries.indicator_id == series_id)
             if source:
                 q = q.filter(TimeSeries.source == source)
+            if ctx is not None:
+                q = q.filter(TimeSeries.timestamp <= ctx)
             row = q.order_by(TimeSeries.timestamp.desc()).first()
             if row is None:
                 return None, None
@@ -54,15 +105,20 @@ def get_series(
     """
     Devuelve un DataFrame(timestamp, value) con la serie temporal
     de los ultimos N dias, ordenado por fecha ascendente.
+    Si hay contexto temporal activo, los días se calculan relativos a context_date.
     Devuelve DataFrame vacio si no hay datos.
     """
     try:
-        since = datetime.utcnow() - timedelta(days=days)
+        ctx = _time_context
+        ref_date = ctx if ctx is not None else datetime.utcnow()
+        since = ref_date - timedelta(days=days)
         with SessionLocal() as db:
             q = db.query(TimeSeries).filter(
                 TimeSeries.indicator_id == series_id,
                 TimeSeries.timestamp >= since,
             )
+            if ctx is not None:
+                q = q.filter(TimeSeries.timestamp <= ctx)
             if source:
                 q = q.filter(TimeSeries.source == source)
             rows = q.order_by(TimeSeries.timestamp.asc()).all()
@@ -74,6 +130,89 @@ def get_series(
     except Exception as exc:
         logger.debug("get_series(%s): %s", series_id, exc)
         return pd.DataFrame(columns=["timestamp", "value"])
+
+
+def get_value_at_date(
+    series_id: str,
+    target_date: datetime,
+    source: Optional[str] = None,
+) -> Tuple[Optional[float], Optional[datetime]]:
+    """
+    Devuelve (valor, timestamp) del dato más reciente en o antes de target_date.
+    Útil para el comparador temporal del Módulo 14.
+    """
+    try:
+        with SessionLocal() as db:
+            q = db.query(TimeSeries).filter(
+                TimeSeries.indicator_id == series_id,
+                TimeSeries.timestamp <= target_date,
+            )
+            if source:
+                q = q.filter(TimeSeries.source == source)
+            row = q.order_by(TimeSeries.timestamp.desc()).first()
+            if row is None:
+                return None, None
+            return row.value, row.timestamp
+    except Exception as exc:
+        logger.debug("get_value_at_date(%s): %s", series_id, exc)
+        return None, None
+
+
+def get_series_between(
+    series_id: str,
+    date_from: datetime,
+    date_to: datetime,
+    source: Optional[str] = None,
+) -> pd.DataFrame:
+    """
+    Devuelve un DataFrame(timestamp, value) entre dos fechas, ordenado ascendente.
+    """
+    try:
+        with SessionLocal() as db:
+            q = db.query(TimeSeries).filter(
+                TimeSeries.indicator_id == series_id,
+                TimeSeries.timestamp >= date_from,
+                TimeSeries.timestamp <= date_to,
+            )
+            if source:
+                q = q.filter(TimeSeries.source == source)
+            rows = q.order_by(TimeSeries.timestamp.asc()).all()
+        if not rows:
+            return pd.DataFrame(columns=["timestamp", "value"])
+        return pd.DataFrame(
+            [{"timestamp": r.timestamp, "value": r.value} for r in rows]
+        )
+    except Exception as exc:
+        logger.debug("get_series_between(%s): %s", series_id, exc)
+        return pd.DataFrame(columns=["timestamp", "value"])
+
+
+def get_all_indicator_ids() -> list[dict]:
+    """
+    Devuelve todos los indicator_ids distintos en la BD,
+    con su fuente más reciente y último timestamp.
+    Útil para construir el dropdown del comparador temporal.
+    """
+    try:
+        from sqlalchemy import func
+        with SessionLocal() as db:
+            rows = (
+                db.query(
+                    TimeSeries.indicator_id,
+                    TimeSeries.source,
+                    func.max(TimeSeries.timestamp).label("last_ts"),
+                )
+                .group_by(TimeSeries.indicator_id, TimeSeries.source)
+                .order_by(TimeSeries.indicator_id)
+                .all()
+            )
+        return [
+            {"indicator_id": r.indicator_id, "source": r.source, "last_ts": r.last_ts}
+            for r in rows
+        ]
+    except Exception as exc:
+        logger.debug("get_all_indicator_ids: %s", exc)
+        return []
 
 
 def get_change(
@@ -1881,3 +2020,150 @@ def get_demographic_comparison(
 
     df_combined = df_combined.sort_index()
     return df_combined
+
+
+# ── Análisis de sectores ────────────────────────────────────────────────────────
+
+def calculate_sector_performance(period_days: int = 365) -> pd.DataFrame:
+    """
+    Lee los ETFs sectoriales del S&P 500 desde SQLite y calcula rendimientos.
+
+    ETFs cubiertos: XLK, XLE, XLF, XLV, XLP, XLY, XLB, XLI, XLU, XLRE, XLC
+    También lee ^GSPC como benchmark.
+
+    Devuelve DataFrame con columnas:
+      ticker, name, current_price, change_1d_pct, change_period_pct,
+      change_ytd_pct, vs_sp500_pct, best_sector (bool), worst_sector (bool)
+    """
+    sector_map = {
+        "XLK":  "Tecnología",
+        "XLE":  "Energía",
+        "XLF":  "Financiero",
+        "XLV":  "Salud",
+        "XLP":  "Consumo básico",
+        "XLY":  "Consumo discrecional",
+        "XLB":  "Materiales",
+        "XLI":  "Industrial",
+        "XLU":  "Utilities",
+        "XLRE": "Inmobiliario REITs",
+        "XLC":  "Comunicaciones",
+    }
+
+    records = []
+    sp500_ytd = None
+
+    for ticker, name in sector_map.items():
+        series_id = f"yf_{ticker.lower()}_close"
+        try:
+            df = get_series(series_id, days=max(period_days + 30, 400))
+            if df is None or df.empty:
+                records.append({
+                    "ticker": ticker, "name": name,
+                    "current_price": None,
+                    "change_1d_pct": None,
+                    "change_period_pct": None,
+                    "change_ytd_pct": None,
+                    "vs_sp500_pct": None,
+                })
+                continue
+
+            df["timestamp"] = pd.to_datetime(df["timestamp"])
+            df = df.sort_values("timestamp")
+
+            current = df["value"].iloc[-1]
+            prev_day = df["value"].iloc[-2] if len(df) > 1 else current
+            chg_1d = (current - prev_day) / prev_day * 100 if prev_day else None
+
+            # Período seleccionado
+            cutoff_period = df["timestamp"].max() - pd.Timedelta(days=period_days)
+            df_period = df[df["timestamp"] >= cutoff_period]
+            if not df_period.empty:
+                start_period = df_period["value"].iloc[0]
+                chg_period = (current - start_period) / start_period * 100 if start_period else None
+            else:
+                chg_period = None
+
+            # YTD
+            from datetime import datetime as _dt
+            ytd_start = pd.Timestamp(_dt.utcnow().year, 1, 1)
+            df_ytd = df[df["timestamp"] >= ytd_start]
+            if not df_ytd.empty:
+                start_ytd = df_ytd["value"].iloc[0]
+                chg_ytd = (current - start_ytd) / start_ytd * 100 if start_ytd else None
+            else:
+                chg_ytd = None
+
+            records.append({
+                "ticker": ticker, "name": name,
+                "current_price": round(current, 2),
+                "change_1d_pct": round(chg_1d, 2) if chg_1d is not None else None,
+                "change_period_pct": round(chg_period, 2) if chg_period is not None else None,
+                "change_ytd_pct": round(chg_ytd, 2) if chg_ytd is not None else None,
+                "vs_sp500_pct": None,  # se calcula tras leer SP500
+            })
+        except Exception as exc:
+            logger.debug("calculate_sector_performance(%s): %s", ticker, exc)
+            records.append({
+                "ticker": ticker, "name": name,
+                "current_price": None, "change_1d_pct": None,
+                "change_period_pct": None, "change_ytd_pct": None,
+                "vs_sp500_pct": None,
+            })
+
+    # SP500 YTD
+    try:
+        sp_df = get_series("yf_gspc_close", days=400)
+        if sp_df is not None and not sp_df.empty:
+            sp_df["timestamp"] = pd.to_datetime(sp_df["timestamp"])
+            sp_df = sp_df.sort_values("timestamp")
+            from datetime import datetime as _dt
+            ytd_start = pd.Timestamp(_dt.utcnow().year, 1, 1)
+            sp_ytd = sp_df[sp_df["timestamp"] >= ytd_start]
+            if not sp_ytd.empty:
+                sp500_ytd = (sp_df["value"].iloc[-1] - sp_ytd["value"].iloc[0]) / sp_ytd["value"].iloc[0] * 100
+    except Exception:
+        pass
+
+    result = pd.DataFrame(records)
+    if sp500_ytd is not None and "change_ytd_pct" in result.columns:
+        result["vs_sp500_pct"] = result["change_ytd_pct"].apply(
+            lambda x: round(x - sp500_ytd, 2) if x is not None else None
+        )
+
+    # Marcar mejor y peor sector por YTD
+    if not result.empty and result["change_ytd_pct"].notna().any():
+        max_idx = result["change_ytd_pct"].idxmax()
+        min_idx = result["change_ytd_pct"].idxmin()
+        result["best_sector"] = False
+        result["worst_sector"] = False
+        result.loc[max_idx, "best_sector"] = True
+        result.loc[min_idx, "worst_sector"] = True
+
+    return result
+
+
+def calculate_bond_duration_impact(
+    current_yield: float,
+    yield_change_pp: float,
+    duration_years: float,
+) -> float:
+    """
+    Calcula el impacto aproximado en el precio de un bono ante una variación de tipos.
+
+    Fórmula simplificada (duración modificada):
+      impacto_precio ≈ -duration_mod × yield_change_pp
+      donde duration_mod = duration / (1 + current_yield/100)
+
+    Parámetros:
+      current_yield: rendimiento actual del bono en % (ej. 4.3)
+      yield_change_pp: variación de tipos en puntos porcentuales (ej. +1.0 = sube 1pp)
+      duration_years: duración del bono en años (ej. 10 para bono a 10Y)
+
+    Devuelve el cambio porcentual estimado en el precio del bono (negativo si tipos suben).
+    """
+    try:
+        duration_mod = duration_years / (1 + current_yield / 100)
+        price_change_pct = -duration_mod * yield_change_pp
+        return round(price_change_pct, 2)
+    except Exception:
+        return 0.0

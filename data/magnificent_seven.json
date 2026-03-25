@@ -1,0 +1,15 @@
+{
+  "last_updated": "2026-03-01",
+  "source": "FactSet / Bloomberg",
+  "combined_weight_sp500_pct": 33.3,
+  "combined_market_cap_trillion": 18.5,
+  "companies": [
+    {"ticker": "AAPL",  "name": "Apple",     "weight_sp500_pct": 7.1, "forward_pe": 29.2, "revenue_growth_yoy_pct":   5.8, "net_margin_pct": 26.4},
+    {"ticker": "MSFT",  "name": "Microsoft", "weight_sp500_pct": 6.8, "forward_pe": 31.5, "revenue_growth_yoy_pct":  16.2, "net_margin_pct": 36.1},
+    {"ticker": "NVDA",  "name": "NVIDIA",    "weight_sp500_pct": 5.9, "forward_pe": 35.8, "revenue_growth_yoy_pct": 114.2, "net_margin_pct": 53.4},
+    {"ticker": "AMZN",  "name": "Amazon",    "weight_sp500_pct": 4.2, "forward_pe": 38.1, "revenue_growth_yoy_pct":  12.5, "net_margin_pct":  8.9},
+    {"ticker": "GOOGL", "name": "Alphabet",  "weight_sp500_pct": 3.9, "forward_pe": 21.8, "revenue_growth_yoy_pct":  13.8, "net_margin_pct": 24.0},
+    {"ticker": "META",  "name": "Meta",      "weight_sp500_pct": 2.8, "forward_pe": 24.5, "revenue_growth_yoy_pct":  21.2, "net_margin_pct": 34.1},
+    {"ticker": "TSLA",  "name": "Tesla",     "weight_sp500_pct": 2.6, "forward_pe": 98.3, "revenue_growth_yoy_pct":  -1.1, "net_margin_pct":  5.5}
+  ]
+}

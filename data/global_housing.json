@@ -1,0 +1,14 @@
+{
+  "last_updated": "2026-01-01",
+  "source": "Numbeo / OECD / BIS estimaciones",
+  "markets": {
+    "USA": {"price_yoy_pct":  4.2, "price_to_income":  7.8, "price_to_rent": 22.1, "mortgage_rate_pct": 6.8, "trend": "stable"},
+    "ESP": {"price_yoy_pct":  8.5, "price_to_income":  9.2, "price_to_rent": 18.5, "mortgage_rate_pct": 4.1, "trend": "rising"},
+    "DEU": {"price_yoy_pct": -3.1, "price_to_income": 11.2, "price_to_rent": 28.4, "mortgage_rate_pct": 4.3, "trend": "falling"},
+    "GBR": {"price_yoy_pct":  2.8, "price_to_income": 10.1, "price_to_rent": 21.3, "mortgage_rate_pct": 5.2, "trend": "stable"},
+    "AUS": {"price_yoy_pct":  6.3, "price_to_income": 13.5, "price_to_rent": 25.8, "mortgage_rate_pct": 6.1, "trend": "rising"},
+    "CHN": {"price_yoy_pct": -5.2, "price_to_income": 18.3, "price_to_rent": 35.2, "mortgage_rate_pct": 3.5, "trend": "falling"},
+    "CAN": {"price_yoy_pct": -1.2, "price_to_income": 15.8, "price_to_rent": 29.1, "mortgage_rate_pct": 6.5, "trend": "falling"},
+    "NLD": {"price_yoy_pct":  9.8, "price_to_income": 12.3, "price_to_rent": 23.5, "mortgage_rate_pct": 4.2, "trend": "rising"}
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "last_updated": "2026-03-01",
+  "nato_defense_spending_gdp_target_pct": 2.0,
+  "countries_meeting_target_2025": 23,
+  "total_nato_members": 32,
+  "us_defense_budget_2025_bn": 886,
+  "us_defense_budget_trump_request_2026_bn": 1000,
+  "top_contractors": [
+    {"name": "Lockheed Martin",  "ticker": "LMT", "revenue_bn": 67.6, "backlog_bn": 158},
+    {"name": "RTX (Raytheon)",   "ticker": "RTX", "revenue_bn": 68.9, "backlog_bn": 196},
+    {"name": "Boeing Defense",   "ticker": "BA",  "revenue_bn": 24.9, "backlog_bn":  60},
+    {"name": "Northrop Grumman", "ticker": "NOC", "revenue_bn": 39.3, "backlog_bn":  84},
+    {"name": "General Dynamics", "ticker": "GD",  "revenue_bn": 42.3, "backlog_bn":  95}
+  ]
+}

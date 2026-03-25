@@ -1,0 +1,20 @@
+{
+  "last_updated": "2026-03-20",
+  "source": "Glassnode / CoinMetrics estimaciones",
+  "current_price_usd": 84320,
+  "realized_price_usd": 52800,
+  "mvrv_ratio": 1.60,
+  "stock_to_flow_model_price": 98000,
+  "hash_rate_eh_s": 782,
+  "active_addresses_7d_avg": 925000,
+  "exchange_reserves_btc": 2180000,
+  "long_term_holder_supply_pct": 74.3,
+  "short_term_holder_supply_pct": 25.7,
+  "days_since_last_halving": 335,
+  "next_halving_estimated_date": "2028-04-15",
+  "metrics_interpretation": {
+    "mvrv": "MVRV de 1.6 indica que el mercado está en zona neutral (1=justo valorado, >3.5=sobrecomprado históricamente, <1=infravalorado)",
+    "exchange_reserves": "Las reservas en exchanges caen — los holders están moviendo BTC a cold wallets (señal alcista, menos presión vendedora inmediata)",
+    "lth_supply": "74% del supply en manos de largo placistas — señal de madurez del mercado"
+  }
+}

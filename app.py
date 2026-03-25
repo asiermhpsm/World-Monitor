@@ -27,6 +27,8 @@ from modules.module_10_geopolitics import register_callbacks_module_10, render_m
 from modules.module_11_leading_indicators import register_callbacks_module_11, render_module_11
 from modules.module_12_china import register_callbacks_module_12, render_module_12
 from modules.module_13_demographics import register_callbacks_module_13, render_module_13
+from modules.module_14_historical import register_callbacks_module_14, render_module_14
+from modules.module_16_markets_analysis import register_callbacks_module_16, render_module_16
 from components.scheduler_status import (
     build_alerts_bar,
     build_scheduler_panel,
@@ -459,6 +461,10 @@ def render_page(pathname):
             return render_module_12()
         if n == 13:
             return render_module_13()
+        if n == 14:
+            return render_module_14()
+        if n == 16:
+            return render_module_16()
         return build_module_placeholder(n)
 
     # Cualquier otra ruta → 404
@@ -559,6 +565,8 @@ register_callbacks_module_10(app)
 register_callbacks_module_11(app)
 register_callbacks_module_12(app)
 register_callbacks_module_13(app)
+register_callbacks_module_14(app)
+register_callbacks_module_16(app)
 
 
 # ── Arranque ──────────────────────────────────────────────────────────────────

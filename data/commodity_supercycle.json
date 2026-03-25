@@ -1,0 +1,12 @@
+{
+  "last_updated": "2026-01-01",
+  "source": "Bloomberg / Goldman Sachs",
+  "bcom_index_annual": {
+    "2000": 100, "2002": 85,  "2004": 130, "2006": 165,
+    "2008": 210, "2010": 155, "2012": 175, "2014": 155,
+    "2016": 115, "2018": 150, "2020": 100, "2022": 185,
+    "2023": 155, "2024": 148, "2025": 162, "2026": 178
+  },
+  "current_cycle_assessment": "Posible inicio de nuevo superciclo impulsado por demanda de minerales para transición energética y desglobalización. Riesgo: si la economía global desacelera, el superciclo se puede interrumpir.",
+  "goldman_12m_forecast_bcom_return_pct": 8.5
+}

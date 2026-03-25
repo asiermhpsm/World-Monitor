@@ -489,3 +489,344 @@ html, body {
 .js-plotly-plot .plotly .modebar-btn path {
   fill: var(--text-label) !important;
 }
+
+/* ── dcc.Dropdown — tema oscuro completo ─────────────────────────────── */
+.Select-control,
+.VirtualizedSelectFocusedOption,
+.Select--single > .Select-control,
+.Select.is-open > .Select-control {
+  background-color: var(--card-bg) !important;
+  border-color: var(--border-mid) !important;
+  color: var(--text) !important;
+}
+
+.Select-value-label,
+.Select-placeholder,
+.Select-input > input {
+  color: var(--text) !important;
+  background: transparent !important;
+}
+
+.Select-arrow-zone .Select-arrow {
+  border-top-color: var(--text-muted) !important;
+}
+
+.Select-menu-outer {
+  background-color: #1a2035 !important;
+  border: 1px solid var(--border-mid) !important;
+  border-radius: 4px !important;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.5) !important;
+  z-index: 9999 !important;
+}
+
+.Select-menu {
+  background-color: transparent !important;
+  max-height: 280px !important;
+}
+
+.Select-option {
+  background-color: transparent !important;
+  color: var(--text) !important;
+  font-size: 0.82rem !important;
+  padding: 7px 12px !important;
+}
+
+.Select-option.is-focused,
+.Select-option:hover {
+  background-color: rgba(59,130,246,0.15) !important;
+  color: #93c5fd !important;
+}
+
+.Select-option.is-selected {
+  background-color: rgba(59,130,246,0.25) !important;
+  color: var(--accent) !important;
+  font-weight: 600;
+}
+
+.Select-option.is-disabled {
+  color: var(--text-label) !important;
+  font-size: 0.7rem !important;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  cursor: default;
+}
+
+.Select.is-focused .Select-control,
+.Select.is-focused:not(.is-open) > .Select-control {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 1px rgba(59,130,246,0.3) !important;
+}
+
+/* dcc.Dropdown nuevo API (React-Select en Dash >= 2.9) */
+.dash-dropdown .dropdown,
+.dash-dropdown [class*="-container"],
+.dash-dropdown [class*="-control"] {
+  background-color: var(--card-bg) !important;
+  border-color: var(--border-mid) !important;
+  color: var(--text) !important;
+  border-radius: 4px;
+}
+
+.dash-dropdown [class*="-menu"] {
+  background-color: #1a2035 !important;
+  border: 1px solid var(--border-mid) !important;
+  z-index: 9999 !important;
+}
+
+.dash-dropdown [class*="-option"] {
+  background-color: transparent !important;
+  color: var(--text) !important;
+  font-size: 0.82rem;
+}
+
+.dash-dropdown [class*="-option"]:hover,
+.dash-dropdown [class*="-option--is-focused"] {
+  background-color: rgba(59,130,246,0.15) !important;
+  color: #93c5fd !important;
+}
+
+.dash-dropdown [class*="-option--is-selected"] {
+  background-color: rgba(59,130,246,0.25) !important;
+  color: var(--accent) !important;
+}
+
+.dash-dropdown [class*="-singleValue"],
+.dash-dropdown [class*="-placeholder"],
+.dash-dropdown [class*="-Input"] input {
+  color: var(--text) !important;
+}
+
+.dash-dropdown [class*="-indicatorSeparator"] {
+  background-color: var(--border-mid) !important;
+}
+
+.dash-dropdown [class*="-dropdownIndicator"] svg,
+.dash-dropdown [class*="-clearIndicator"] svg {
+  color: var(--text-muted) !important;
+}
+
+/* ── dcc.DatePickerSingle / DatePickerRange — tema oscuro ────────────── */
+.DateInput,
+.DateInput_input,
+.SingleDatePickerInput,
+.DateRangePickerInput {
+  background-color: var(--card-bg) !important;
+  border-color: var(--border-mid) !important;
+  color: var(--text) !important;
+  border-radius: 4px !important;
+}
+
+.DateInput_input {
+  font-size: 0.82rem !important;
+  color: var(--text) !important;
+  background: transparent !important;
+  border-bottom: none !important;
+  padding: 6px 10px !important;
+  width: 100% !important;
+}
+
+.DateInput_input__focused {
+  border-bottom: 2px solid var(--accent) !important;
+}
+
+.SingleDatePickerInput__withBorder,
+.DateRangePickerInput__withBorder {
+  border: 1px solid var(--border-mid) !important;
+  border-radius: 4px !important;
+  background-color: var(--card-bg) !important;
+  overflow: hidden;
+}
+
+.DateInput_input::placeholder {
+  color: var(--text-label) !important;
+}
+
+/* Calendario popup */
+.DayPicker,
+.DayPicker__withBorder,
+.SingleDatePicker_picker,
+.DateRangePicker_picker {
+  background-color: #1a2035 !important;
+  border: 1px solid var(--border-mid) !important;
+  border-radius: 6px !important;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.6) !important;
+  z-index: 9999 !important;
+}
+
+.DayPickerNavigation_button {
+  background: transparent !important;
+  border: 1px solid var(--border-mid) !important;
+  border-radius: 4px !important;
+  color: var(--text) !important;
+}
+
+.DayPickerNavigation_button:hover {
+  background: rgba(59,130,246,0.15) !important;
+  border-color: var(--accent) !important;
+}
+
+.DayPickerNavigation_svg__horizontal {
+  fill: var(--text-muted) !important;
+  height: 14px !important;
+  width: 14px !important;
+}
+
+.CalendarMonthGrid,
+.CalendarMonthGrid__animating {
+  background-color: #1a2035 !important;
+}
+
+.CalendarMonth,
+.CalendarMonth_table {
+  background-color: transparent !important;
+}
+
+.CalendarMonth_caption strong {
+  color: var(--text) !important;
+  font-size: 0.9rem !important;
+}
+
+.DayPicker_weekHeader_li small {
+  color: var(--text-label) !important;
+  font-size: 0.7rem !important;
+}
+
+/* Días del calendario */
+.CalendarDay__default {
+  background: transparent !important;
+  border: 1px solid transparent !important;
+  color: var(--text) !important;
+  border-radius: 4px !important;
+  font-size: 0.78rem !important;
+}
+
+.CalendarDay__default:hover {
+  background: rgba(59,130,246,0.2) !important;
+  color: #93c5fd !important;
+  border-color: var(--accent) !important;
+}
+
+.CalendarDay__selected,
+.CalendarDay__selected:hover {
+  background: var(--accent) !important;
+  color: #fff !important;
+  border-color: var(--accent) !important;
+  border-radius: 4px !important;
+}
+
+.CalendarDay__selected_span {
+  background: rgba(59,130,246,0.2) !important;
+  color: var(--text) !important;
+}
+
+.CalendarDay__blocked_out_of_range {
+  color: var(--text-label) !important;
+  opacity: 0.3 !important;
+}
+
+.CalendarDay__today {
+  font-weight: 700 !important;
+  color: var(--accent) !important;
+}
+
+/* Botón "X" para limpiar la fecha */
+.DateInput_fang { display: none !important; }
+
+/* ── Bootstrap inputs oscuros (form-control, form-select) ────────────── */
+.form-control,
+.form-select {
+  background-color: var(--card-bg) !important;
+  border: 1px solid var(--border-mid) !important;
+  color: var(--text) !important;
+  border-radius: 4px !important;
+}
+
+.form-control:focus,
+.form-select:focus {
+  background-color: #1a2035 !important;
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 2px rgba(59,130,246,0.2) !important;
+  color: var(--text) !important;
+}
+
+.form-control::placeholder,
+.form-select::placeholder {
+  color: var(--text-label) !important;
+}
+
+textarea.form-control {
+  resize: vertical;
+  min-height: 72px;
+}
+
+/* ── Tabs Bootstrap oscuros ──────────────────────────────────────────── */
+.nav-tabs {
+  border-bottom: 1px solid var(--border-mid) !important;
+}
+
+.nav-tabs .nav-link {
+  color: var(--text-muted) !important;
+  border: none !important;
+  background: transparent !important;
+  font-size: 0.82rem !important;
+  padding: 8px 16px !important;
+  border-radius: 4px 4px 0 0 !important;
+  transition: color 0.15s, background 0.15s;
+}
+
+.nav-tabs .nav-link:hover {
+  color: var(--text) !important;
+  background: rgba(255,255,255,0.04) !important;
+}
+
+.nav-tabs .nav-link.active {
+  color: var(--accent) !important;
+  background: rgba(59,130,246,0.1) !important;
+  border-bottom: 2px solid var(--accent) !important;
+  font-weight: 600;
+}
+
+.tab-content {
+  padding-top: 16px;
+}
+
+/* ── Modal oscuro ────────────────────────────────────────────────────── */
+.modal-content {
+  background-color: var(--card-bg) !important;
+  border: 1px solid var(--border-mid) !important;
+  color: var(--text) !important;
+}
+
+.modal-header {
+  border-bottom: 1px solid var(--border) !important;
+}
+
+.modal-footer {
+  border-top: 1px solid var(--border) !important;
+}
+
+.modal-title {
+  color: var(--text) !important;
+  font-size: 0.95rem !important;
+  font-weight: 700;
+}
+
+.btn-close {
+  filter: invert(1) grayscale(1) !important;
+  opacity: 0.6;
+}
+.btn-close:hover { opacity: 1; }
+
+/* ── Labels de formulario ────────────────────────────────────────────── */
+label.form-label {
+  color: var(--text-muted) !important;
+  font-size: 0.78rem !important;
+  margin-bottom: 3px !important;
+}
+
+/* ── Número tipo de input (eliminar flechas en Chrome/Firefox) ───────── */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  opacity: 0.4;
+  filter: invert(1);
+}

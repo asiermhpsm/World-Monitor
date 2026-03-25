@@ -1,0 +1,18 @@
+{
+  "last_updated": "2026-01-01",
+  "source": "CBRE / JLL / Moody's",
+  "us_office_vacancy_rate_pct": 19.8,
+  "us_office_price_decline_since_2019_pct": -28,
+  "us_bank_cre_exposure_bn": 2800,
+  "us_small_banks_cre_pct_of_total_loans": 28.7,
+  "cre_loan_maturities_2026_2027_bn": 950,
+  "cities_worst_vacancy": [
+    {"city": "San Francisco", "vacancy_pct": 35.1},
+    {"city": "Austin",        "vacancy_pct": 28.3},
+    {"city": "Houston",       "vacancy_pct": 25.8},
+    {"city": "Chicago",       "vacancy_pct": 22.4},
+    {"city": "New York",      "vacancy_pct": 18.2}
+  ],
+  "logistics_vacancy_pct": 6.2,
+  "logistics_rent_growth_yoy_pct": 3.1
+}

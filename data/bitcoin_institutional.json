@@ -1,0 +1,18 @@
+{
+  "last_updated": "2026-03-01",
+  "source": "BitcoinTreasuries.net",
+  "etf_aum_bn_usd": 62.5,
+  "etf_btc_held": 742000,
+  "top_etf_holders": [
+    {"name": "BlackRock iShares IBIT",  "btc_held": 285000, "aum_bn": 24.1},
+    {"name": "Fidelity FBTC",           "btc_held": 198000, "aum_bn": 16.7},
+    {"name": "Grayscale GBTC",          "btc_held": 142000, "aum_bn": 12.0},
+    {"name": "ARK 21Shares ARKB",       "btc_held":  52000, "aum_bn":  4.4},
+    {"name": "Invesco Galaxy BTCO",     "btc_held":  22000, "aum_bn":  1.9}
+  ],
+  "corporate_treasuries_btc": [
+    {"company": "MicroStrategy", "btc_held": 214000, "avg_cost_usd": 35180},
+    {"company": "Tesla",         "btc_held":   9720, "avg_cost_usd": 31620},
+    {"company": "Block (Square)","btc_held":   8027, "avg_cost_usd": 22000}
+  ]
+}

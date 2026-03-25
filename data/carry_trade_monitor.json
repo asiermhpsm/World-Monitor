@@ -1,0 +1,9 @@
+{
+  "last_updated": "2026-03-20",
+  "pairs": [
+    {"fund_currency": "JPY", "invest_currency": "USD", "rate_differential_pct": 3.5, "trend": "bearish_jpy",  "reversal_risk": "high",      "note": "El carry trade más grande del mundo"},
+    {"fund_currency": "JPY", "invest_currency": "MXN", "rate_differential_pct": 8.5, "trend": "bearish_jpy",  "reversal_risk": "very_high",  "note": "Alto carry pero MXN expuesto a risk-off"},
+    {"fund_currency": "CHF", "invest_currency": "USD", "rate_differential_pct": 2.8, "trend": "bearish_chf",  "reversal_risk": "medium",     "note": "Franco suizo como alternativa al yen"},
+    {"fund_currency": "EUR", "invest_currency": "BRL", "rate_differential_pct": 9.5, "trend": "stable",       "reversal_risk": "very_high",  "note": "Alto carry, riesgo político en Brasil"}
+  ]
+}

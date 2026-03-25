@@ -1,0 +1,29 @@
+{
+  "last_updated": "2026-03-20",
+  "commodities": {
+    "crude_oil_brent": {
+      "structure": "backwardation",
+      "spot": 103.5, "1m_future": 102.8, "3m_future": 100.2,
+      "6m_future": 97.5, "12m_future": 94.1,
+      "note": "Backwardation severa — mercado anticipa resolución del conflicto con Irán y reducción del precio"
+    },
+    "natural_gas_henry_hub": {
+      "structure": "contango",
+      "spot": 2.8, "1m_future": 2.9, "3m_future": 3.4,
+      "6m_future": 3.8, "12m_future": 3.6,
+      "note": "Contango estacional — anticipando mayor demanda invernal"
+    },
+    "gold": {
+      "structure": "contango",
+      "spot": 3021, "1m_future": 3035, "3m_future": 3062,
+      "6m_future": 3105, "12m_future": 3190,
+      "note": "Contango normal — refleja coste de almacenamiento y tipos de interés"
+    },
+    "copper": {
+      "structure": "backwardation",
+      "spot": 4.52, "1m_future": 4.48, "3m_future": 4.41,
+      "6m_future": 4.35, "12m_future": 4.28,
+      "note": "Backwardation leve — demanda actual supera la futura esperada"
+    }
+  }
+}
