@@ -6,7 +6,9 @@ Todas las funciones son seguras ante datos faltantes: devuelven None o listas va
 
 from __future__ import annotations
 
+import json
 import logging
+import sqlite3
 from datetime import datetime, timedelta
 from typing import Optional, Tuple
 
@@ -2167,3 +2169,113 @@ def calculate_bond_duration_impact(
         return round(price_change_pct, 2)
     except Exception:
         return 0.0
+
+
+# ── Comparación de snapshots ───────────────────────────────────────────────────
+
+# Indicadores de snapshot donde un valor menor = situación mejor
+_SNAP_LOWER_IS_BETTER = {
+    "vix", "cpi_yoy_us", "hicp_ea", "unemployment_us", "unemployment_es",
+    "risk_premium_es", "gpr_global", "stlfsi", "sahm_rule",
+}
+
+# Etiquetas legibles para las claves de snapshot
+_SNAP_LABELS = {
+    "sp500":             "S&P 500",
+    "ibex35":            "IBEX 35",
+    "vix":               "VIX (Volatilidad)",
+    "fed_funds_rate":    "Tipos Fed (%)",
+    "bce_deposit_rate":  "Tipo BCE depósito (%)",
+    "cpi_yoy_us":        "Inflación EE.UU. YoY (%)",
+    "hicp_ea":           "HICP Eurozona (%)",
+    "unemployment_us":   "Desempleo EE.UU. (%)",
+    "unemployment_es":   "Desempleo España (%)",
+    "spread_10y2y_us":   "Spread 10y-2y EE.UU. (%)",
+    "spread_10y2y_calc": "Spread 10y-2y (calc) (%)",
+    "risk_premium_es":   "Prima riesgo España (pb)",
+    "gold_usd":          "Oro (USD/oz)",
+    "brent_usd":         "Brent (USD/barril)",
+    "bitcoin_usd":       "Bitcoin (USD)",
+    "fear_greed_crypto": "Fear & Greed Crypto",
+    "dxy":               "DXY (Dólar Index)",
+    "eurusd":            "EUR/USD",
+    "gpr_global":        "GPR Global",
+    "stlfsi":            "STLFSI (Estrés Fin.)",
+    "sahm_rule":         "Regla de Sahm",
+}
+
+# Claves a ignorar (metadatos del snapshot, no indicadores)
+_SNAP_META_KEYS = {"timestamp", "label", "trigger"}
+
+
+def compare_snapshots(snapshot_id_1: int, snapshot_id_2: int) -> pd.DataFrame:
+    """
+    Lee dos snapshots de SnapshotHistory y compara todos los indicadores comunes.
+
+    Returns:
+        DataFrame con columnas:
+          indicador, label, valor1, valor2, diferencia_abs, diferencia_pct, señal
+        señal: 'mejor' / 'peor' / 'igual'
+        DataFrame vacío si no hay datos o error.
+    """
+    from config import DB_PATH
+
+    def _load_snapshot(conn, snap_id: int):
+        row = conn.execute(
+            "SELECT snapshot_date, snapshot_data FROM SnapshotHistory WHERE id = ?",
+            (snap_id,),
+        ).fetchone()
+        if row is None:
+            return None, {}
+        try:
+            data = json.loads(row["snapshot_data"])
+        except Exception:
+            data = {}
+        return row["snapshot_date"], data
+
+    try:
+        conn = sqlite3.connect(str(DB_PATH))
+        conn.row_factory = sqlite3.Row
+        date1, data1 = _load_snapshot(conn, snapshot_id_1)
+        date2, data2 = _load_snapshot(conn, snapshot_id_2)
+        conn.close()
+    except Exception as exc:
+        logger.debug("compare_snapshots (db): %s", exc)
+        return pd.DataFrame()
+
+    if not data1 or not data2:
+        return pd.DataFrame()
+
+    keys1 = {k for k, v in data1.items() if k not in _SNAP_META_KEYS and v is not None}
+    keys2 = {k for k, v in data2.items() if k not in _SNAP_META_KEYS and v is not None}
+    common_keys = sorted(keys1 & keys2)
+
+    rows = []
+    for key in common_keys:
+        try:
+            v1 = float(data1[key])
+            v2 = float(data2[key])
+        except (TypeError, ValueError):
+            continue
+
+        dif_abs = v2 - v1
+        dif_pct = (dif_abs / abs(v1) * 100) if v1 != 0 else None
+
+        if abs(dif_abs) < 1e-9:
+            signal = "igual"
+        elif key in _SNAP_LOWER_IS_BETTER:
+            signal = "mejor" if dif_abs < 0 else "peor"
+        else:
+            signal = "mejor" if dif_abs > 0 else "peor"
+
+        rows.append({
+            "indicador":      key,
+            "label":          _SNAP_LABELS.get(key, key),
+            "valor1":         v1,
+            "valor2":         v2,
+            "diferencia_abs": dif_abs,
+            "diferencia_pct": dif_pct,
+            "señal":          signal,
+        })
+
+    return pd.DataFrame(rows) if rows else pd.DataFrame()

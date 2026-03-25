@@ -24,6 +24,7 @@ from dash import ALL, Input, Output, State, dcc, html, no_update, ctx
 
 from config import COLORS, DB_PATH
 from modules.data_helpers import (
+    compare_snapshots,
     get_all_indicator_ids,
     get_geopolitical_events,
     get_series_between,
@@ -94,6 +95,33 @@ CATEGORY_COLORS = {
     "auto": "#6b7280",
     "manual": "#ec4899",
 }
+
+# Indicadores para el comparador de dos fechas libres.
+# Cada entrada: (label, series_id, lower_is_better)
+#   lower_is_better=True  → bajar el valor es señal positiva (VIX, desempleo, inflación...)
+#   lower_is_better=False → subir el valor es señal positiva (índices, oro, BTC...)
+#   lower_is_better=None  → neutral (tipo fed, EUR/USD, DXY)
+_CMP_DATE_INDICATORS = [
+    ("S&P 500",                   "yf_sp500_close",          False),
+    ("IBEX 35",                   "yf_ibex35_close",         False),
+    ("VIX (Volatilidad)",         "yf_vix_close",            True),
+    ("Tipos Fed (%)",             "fred_fed_funds_us",       None),
+    ("Tipo BCE depósito (%)",     "ecb_deposit_rate_ea",     None),
+    ("Inflación EE.UU. YoY (%)", "fred_cpi_yoy_us",         True),
+    ("HICP Eurozona (%)",         "estat_hicp_cp00_ea20",    True),
+    ("Desempleo EE.UU. (%)",      "fred_unemployment_us",    True),
+    ("Spread 10y-2y EE.UU. (%)", "fred_spread_10y2y_us",    False),
+    ("Prima riesgo España (pb)",  "ecb_spread_es_de",        True),
+    ("Oro (USD/oz)",              "yf_gc_close",             False),
+    ("Brent (USD/barril)",        "yf_bz_close",             False),
+    ("Bitcoin (USD)",             "cg_btc_price_usd",        False),
+    ("Fear & Greed Crypto",       "cg_fear_greed_value",     False),
+    ("DXY (Dólar Index)",         "yf_dxy_close",            None),
+    ("EUR/USD",                   "yf_eurusd_close",         None),
+    ("GPR Global",                "fred_gpr_global",         True),
+    ("STLFSI (Estrés Fin.)",      "fred_stlfsi_us",          True),
+    ("Regla de Sahm",             "fred_sahm_rule_us",       True),
+]
 
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
@@ -368,11 +396,27 @@ def _build_time_status_panel(active_date: Optional[str]) -> html.Div:
 
 
 def _build_tab2():
-    """Tab 2: Comparador temporal."""
+    """Tab 2: Comparador temporal — tres secciones: simple, multi-indicador, snapshots."""
     indicator_opts = _build_indicator_options()
     default_indicator = "yf_sp500_close"
 
-    return html.Div([
+    # Opciones para el multi-select (misma lista sin los headers de grupo)
+    multi_opts = [o for o in indicator_opts if not o.get("disabled")]
+
+    # Opciones de snapshots guardados
+    snapshots = _get_snapshots(50)
+    snap_opts = []
+    for s in snapshots:
+        label_str = s.get("label") or ""
+        trigger = s.get("trigger", "scheduled")
+        icon = "📸" if trigger == "manual" else "🕐"
+        lbl = f"{icon} {s['snapshot_date'][:10]}"
+        if label_str:
+            lbl += f" — {label_str[:30]}"
+        snap_opts.append({"label": lbl, "value": s["id"]})
+
+    # ── Sección A: Comparador simple (un indicador, dos fechas) ──────────────
+    section_simple = html.Div([
         dbc.Row([
             dbc.Col([
                 html.Div("INDICADOR", className="metric-card-title", style={"marginBottom": "4px"}),
@@ -408,6 +452,128 @@ def _build_tab2():
             ], width=2),
         ], className="g-2 mb-3"),
         html.Div(id="m14-cmp-results"),
+    ])
+
+    # ── Sección B: Multi-indicador normalizado a base 100 ────────────────────
+    section_multi = html.Div([
+        dbc.Alert(
+            [
+                html.Strong("Base 100: "),
+                "Cada indicador se normaliza a 100 en Fecha 1. Permite comparar evoluciones "
+                "porcentuales de hasta 5 indicadores con escalas muy distintas.",
+            ],
+            color="dark",
+            style={"fontSize": "0.78rem", "padding": "8px 14px", "marginBottom": "12px",
+                   "border": "1px solid #374151", "backgroundColor": "rgba(59,130,246,0.06)"},
+        ),
+        dbc.Row([
+            dbc.Col([
+                html.Div("INDICADORES (máx. 5)", className="metric-card-title",
+                         style={"marginBottom": "4px"}),
+                dcc.Dropdown(
+                    id="m14-multi-indicators",
+                    options=multi_opts,
+                    value=["yf_sp500_close"],
+                    multi=True,
+                    placeholder="Selecciona hasta 5 indicadores...",
+                    style={"fontSize": "0.82rem"},
+                ),
+            ], width=5),
+            dbc.Col([
+                html.Div("FECHA INICIO (base 100)", className="metric-card-title",
+                         style={"marginBottom": "4px"}),
+                dcc.DatePickerSingle(
+                    id="m14-multi-date1",
+                    display_format="DD/MM/YYYY",
+                    placeholder="Fecha inicio...",
+                    clearable=True,
+                ),
+            ], width=3),
+            dbc.Col([
+                html.Div("FECHA FIN", className="metric-card-title",
+                         style={"marginBottom": "4px"}),
+                dcc.DatePickerSingle(
+                    id="m14-multi-date2",
+                    display_format="DD/MM/YYYY",
+                    placeholder="Fecha fin...",
+                    clearable=True,
+                ),
+            ], width=2),
+            dbc.Col([
+                html.Div("\u00a0", className="metric-card-title", style={"marginBottom": "4px"}),
+                dbc.Button("Comparar", id="m14-multi-btn", color="primary", className="w-100"),
+            ], width=2),
+        ], className="g-2 mb-3"),
+        html.Div(id="m14-multi-results"),
+    ])
+
+    # ── Sección C: Comparador de dos fechas libres ───────────────────────────
+    section_snaps = html.Div([
+        dbc.Alert(
+            [
+                html.Strong("Semáforo: "),
+                html.Span("▲ Mejor  ", style={"color": "#00c853"}),
+                html.Span("▼ Peor  ", style={"color": "#d50000"}),
+                html.Span("● Sin cambio  ", style={"color": "#ffd600"}),
+                "— Elige cualquier par de fechas. Se comparan los ~19 indicadores clave "
+                "consultando el valor más reciente en o antes de cada fecha.",
+            ],
+            color="dark",
+            style={"fontSize": "0.78rem", "padding": "8px 14px", "marginBottom": "12px",
+                   "border": "1px solid #374151", "backgroundColor": "rgba(16,185,129,0.06)"},
+        ),
+        dbc.Row([
+            dbc.Col([
+                html.Div("FECHA A", className="metric-card-title",
+                         style={"marginBottom": "4px"}),
+                dcc.DatePickerSingle(
+                    id="m14-snap-cmp-1",
+                    display_format="DD/MM/YYYY",
+                    placeholder="Fecha A...",
+                    clearable=True,
+                    style={"width": "100%"},
+                ),
+            ], width=3),
+            dbc.Col([
+                html.Div("FECHA B", className="metric-card-title",
+                         style={"marginBottom": "4px"}),
+                dcc.DatePickerSingle(
+                    id="m14-snap-cmp-2",
+                    display_format="DD/MM/YYYY",
+                    placeholder="Fecha B...",
+                    clearable=True,
+                    style={"width": "100%"},
+                ),
+            ], width=3),
+            dbc.Col([
+                html.Div("\u00a0", className="metric-card-title",
+                         style={"marginBottom": "4px"}),
+                dbc.Button("Comparar fechas", id="m14-snap-cmp-btn",
+                           color="primary", className="w-100"),
+            ], width=3),
+            dbc.Col([
+                html.Div("\u00a0", className="metric-card-title",
+                         style={"marginBottom": "4px"}),
+                dbc.Button(
+                    "Exportar CSV",
+                    id="m14-snap-cmp-export-btn",
+                    color="secondary",
+                    outline=True,
+                    className="w-100",
+                    disabled=True,
+                ),
+                dcc.Download(id="m14-snap-cmp-download"),
+            ], width=3),
+        ], className="g-2 mb-3"),
+        html.Div(id="m14-snap-cmp-results"),
+    ])
+
+    return html.Div([
+        dbc.Tabs([
+            dbc.Tab(section_simple, label="Comparador simple",      tab_id="t2-simple"),
+            dbc.Tab(section_multi,  label="Multi-indicador base 100", tab_id="t2-multi"),
+            dbc.Tab(section_snaps,  label="Comparar snapshots",     tab_id="t2-snaps"),
+        ], id="m14-t2-subtabs", active_tab="t2-simple"),
     ])
 
 
@@ -889,6 +1055,294 @@ def register_callbacks_module_14(app):
             dcc.Graph(figure=fig, config={"displayModeBar": False}),
             table,
         ])
+
+    # ── Tab 2: Comparador multi-indicador base 100 ────────────────────────────
+
+    @app.callback(
+        Output("m14-multi-results", "children"),
+        Input("m14-multi-btn", "n_clicks"),
+        State("m14-multi-indicators", "value"),
+        State("m14-multi-date1", "date"),
+        State("m14-multi-date2", "date"),
+        prevent_initial_call=True,
+    )
+    def comparar_multi_indicador(n_clicks, indicator_ids, date1_str, date2_str):
+        if not n_clicks:
+            return no_update
+        if not indicator_ids:
+            return dbc.Alert("Selecciona al menos un indicador.", color="warning",
+                             style={"fontSize": "0.78rem"})
+        if not date1_str or not date2_str:
+            return dbc.Alert("Selecciona ambas fechas.", color="warning",
+                             style={"fontSize": "0.78rem"})
+        # Limitar a 5 indicadores
+        indicator_ids = list(indicator_ids)[:5]
+        try:
+            d1 = datetime.strptime(date1_str, "%Y-%m-%d")
+            d2 = datetime.strptime(date2_str, "%Y-%m-%d")
+        except ValueError:
+            return dbc.Alert("Fechas inválidas.", color="danger", style={"fontSize": "0.78rem"})
+        if d1 >= d2:
+            return dbc.Alert("Fecha 1 debe ser anterior a Fecha 2.", color="warning",
+                             style={"fontSize": "0.78rem"})
+
+        all_opts_flat = {v: l for group in INDICATOR_GROUPS.values() for l, v in group}
+        PALETTE = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6"]
+
+        fig = go.Figure()
+        summary_rows = []
+        any_data = False
+
+        for idx, ind_id in enumerate(indicator_ids):
+            df = get_series_between(ind_id, d1, d2)
+            color = PALETTE[idx % len(PALETTE)]
+            label = all_opts_flat.get(ind_id, ind_id)
+
+            if df.empty:
+                summary_rows.append((label, "—", "—", "—", "#666"))
+                continue
+
+            # Normalizar a 100 en el primer punto
+            base = df["value"].iloc[0]
+            if base is None or base == 0:
+                summary_rows.append((label, "—", "—", "—", "#666"))
+                continue
+
+            df = df.copy()
+            df["norm"] = df["value"] / base * 100
+
+            fig.add_trace(go.Scatter(
+                x=df["timestamp"],
+                y=df["norm"],
+                mode="lines",
+                name=label,
+                line=dict(color=color, width=2),
+                hovertemplate=(
+                    f"<b>{label}</b><br>"
+                    "Fecha: %{x|%d/%m/%Y}<br>"
+                    "Base 100: <b>%{y:.2f}</b><extra></extra>"
+                ),
+            ))
+
+            val_start = df["value"].iloc[0]
+            val_end   = df["value"].iloc[-1]
+            norm_end  = df["norm"].iloc[-1]
+            pct_chg   = norm_end - 100
+            sign      = "+" if pct_chg >= 0 else ""
+            row_color = "#10b981" if pct_chg >= 0 else "#ef4444"
+            summary_rows.append((
+                label,
+                f"{val_start:,.3f}",
+                f"{val_end:,.3f}",
+                f"{sign}{pct_chg:.2f}%",
+                row_color,
+            ))
+            any_data = True
+
+        if not any_data:
+            return dbc.Alert(
+                "No hay datos para los indicadores seleccionados en ese período.",
+                color="secondary", style={"fontSize": "0.78rem"},
+            )
+
+        # Línea de referencia en 100
+        fig.add_hline(y=100, line=dict(color="#555", dash="dot", width=1))
+
+        fig.update_layout(
+            **_plotly_dark_layout("Evolución comparada — base 100 en Fecha 1", height=380)
+        )
+        fig.update_layout(
+            yaxis_title="Índice (base 100 = Fecha 1)",
+            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
+        )
+
+        table = dbc.Table([
+            html.Thead(html.Tr([
+                html.Th("Indicador",   style={"fontSize": "0.75rem"}),
+                html.Th("Val. inicio", style={"fontSize": "0.75rem", "textAlign": "right"}),
+                html.Th("Val. fin",    style={"fontSize": "0.75rem", "textAlign": "right"}),
+                html.Th("Variación %", style={"fontSize": "0.75rem", "textAlign": "right"}),
+            ])),
+            html.Tbody([
+                html.Tr([
+                    html.Td(r[0], style={"fontSize": "0.78rem"}),
+                    html.Td(r[1], style={"fontSize": "0.78rem", "textAlign": "right",
+                                         "color": COLORS["text_muted"]}),
+                    html.Td(r[2], style={"fontSize": "0.78rem", "textAlign": "right",
+                                         "color": COLORS["text_muted"]}),
+                    html.Td(r[3], style={"fontSize": "0.82rem", "textAlign": "right",
+                                         "fontWeight": "bold", "color": r[4]}),
+                ]) for r in summary_rows
+            ]),
+        ], bordered=False, dark=True, size="sm",
+           style={"backgroundColor": COLORS["card_bg"], "marginTop": "12px"})
+
+        return html.Div([dcc.Graph(figure=fig, config={"displayModeBar": False}), table])
+
+    # ── Tab 2: Comparador de snapshots ─────────────────────────────────────────
+
+    # Almacén interno para pasar el DataFrame al callback de exportación
+    _snap_cmp_cache: dict = {}
+
+    @app.callback(
+        Output("m14-snap-cmp-results", "children"),
+        Output("m14-snap-cmp-export-btn", "disabled"),
+        Input("m14-snap-cmp-btn", "n_clicks"),
+        State("m14-snap-cmp-1", "date"),
+        State("m14-snap-cmp-2", "date"),
+        prevent_initial_call=True,
+    )
+    def comparar_fechas_callback(n_clicks, date1_str, date2_str):
+        if not n_clicks:
+            return no_update, no_update
+        if not date1_str or not date2_str:
+            return dbc.Alert("Selecciona ambas fechas.", color="warning",
+                             style={"fontSize": "0.78rem"}), True
+        try:
+            d1 = datetime.strptime(date1_str, "%Y-%m-%d").replace(hour=23, minute=59, second=59)
+            d2 = datetime.strptime(date2_str, "%Y-%m-%d").replace(hour=23, minute=59, second=59)
+        except ValueError:
+            return dbc.Alert("Fechas inválidas.", color="danger",
+                             style={"fontSize": "0.78rem"}), True
+
+        SIGNAL_COLOR = {"mejor": "#00c853", "peor": "#d50000", "igual": "#ffd600"}
+        SIGNAL_ICON  = {"mejor": "▲", "peor": "▼", "igual": "●"}
+
+        rows_data = []   # para la exportación CSV
+        rows_html = []
+
+        for label, series_id, lower_is_better in _CMP_DATE_INDICATORS:
+            v1, ts1 = get_value_at_date(series_id, d1)
+            v2, ts2 = get_value_at_date(series_id, d2)
+
+            if v1 is None and v2 is None:
+                continue  # indicador sin datos en ambas fechas → omitir fila
+
+            # Calcular diferencia (None si falta algún valor)
+            if v1 is not None and v2 is not None:
+                dif_abs = v2 - v1
+                dif_pct = (dif_abs / abs(v1) * 100) if v1 != 0 else None
+                if abs(dif_abs) < 1e-9:
+                    signal = "igual"
+                elif lower_is_better is True:
+                    signal = "mejor" if dif_abs < 0 else "peor"
+                elif lower_is_better is False:
+                    signal = "mejor" if dif_abs > 0 else "peor"
+                else:
+                    signal = "igual"   # neutral: no emite señal
+            else:
+                dif_abs = None
+                dif_pct = None
+                signal  = "igual"
+
+            sig_color = SIGNAL_COLOR.get(signal, "#aaa")
+            sig_icon  = SIGNAL_ICON.get(signal, "●")
+
+            v1_str  = f"{v1:,.3f}"   if v1  is not None else "—"
+            v2_str  = f"{v2:,.3f}"   if v2  is not None else "—"
+            dif_str = (f"{'+' if dif_abs >= 0 else ''}{dif_abs:,.3f}"
+                       if dif_abs is not None else "—")
+            pct_str = (f"{dif_pct:+.2f}%"
+                       if dif_pct is not None else "—")
+
+            # Fecha real más cercana para tooltip
+            ts1_str = ts1.strftime("%d/%m/%Y") if ts1 else "—"
+            ts2_str = ts2.strftime("%d/%m/%Y") if ts2 else "—"
+
+            rows_html.append(html.Tr([
+                html.Td(label,   style={"fontSize": "0.78rem"}),
+                html.Td(
+                    html.Span(v1_str, title=f"Dato real: {ts1_str}"),
+                    style={"fontSize": "0.78rem", "textAlign": "right",
+                           "color": COLORS["text_muted"]}
+                ),
+                html.Td(
+                    html.Span(v2_str, title=f"Dato real: {ts2_str}"),
+                    style={"fontSize": "0.78rem", "textAlign": "right",
+                           "color": COLORS["text_muted"]}
+                ),
+                html.Td(dif_str, style={"fontSize": "0.78rem", "textAlign": "right"}),
+                html.Td(pct_str, style={"fontSize": "0.78rem", "textAlign": "right"}),
+                html.Td(
+                    html.Span(f"{sig_icon} {signal.capitalize()}",
+                              style={"color": sig_color, "fontWeight": "bold",
+                                     "fontSize": "0.78rem"}),
+                    style={"textAlign": "center"},
+                ),
+            ]))
+
+            rows_data.append({
+                "Indicador":      label,
+                f"Fecha_A ({date1_str})": v1_str,
+                f"Fecha_B ({date2_str})": v2_str,
+                "Diferencia_Abs": dif_str,
+                "Diferencia_Pct": pct_str,
+                "Señal":          signal,
+            })
+
+        if not rows_html:
+            return dbc.Alert(
+                "No hay datos disponibles para ningún indicador en esas fechas.",
+                color="secondary", style={"fontSize": "0.78rem"},
+            ), True
+
+        # Guardar para exportación
+        import pandas as _pd
+        _snap_cmp_cache["df_export"] = _pd.DataFrame(rows_data)
+        _snap_cmp_cache["date1"] = date1_str
+        _snap_cmp_cache["date2"] = date2_str
+
+        # Contadores del semáforo (solo entre los que tienen datos en ambas fechas)
+        mejor_n = sum(1 for r in rows_data if r["Señal"] == "mejor")
+        peor_n  = sum(1 for r in rows_data if r["Señal"] == "peor")
+        igual_n = sum(1 for r in rows_data if r["Señal"] == "igual")
+
+        d1_label = d1.strftime("%d/%m/%Y")
+        d2_label = d2.strftime("%d/%m/%Y")
+
+        table = dbc.Table([
+            html.Thead(html.Tr([
+                html.Th("Indicador",  style={"fontSize": "0.75rem"}),
+                html.Th(f"Fecha A ({d1_label})",
+                        style={"fontSize": "0.75rem", "textAlign": "right"}),
+                html.Th(f"Fecha B ({d2_label})",
+                        style={"fontSize": "0.75rem", "textAlign": "right"}),
+                html.Th("Dif. abs.",  style={"fontSize": "0.75rem", "textAlign": "right"}),
+                html.Th("Dif. %",     style={"fontSize": "0.75rem", "textAlign": "right"}),
+                html.Th("Señal",      style={"fontSize": "0.75rem", "textAlign": "center"}),
+            ])),
+            html.Tbody(rows_html),
+        ], bordered=False, dark=True, hover=True, size="sm",
+           style={"backgroundColor": COLORS["card_bg"]})
+
+        summary = html.Div([
+            html.Span(f"▲ {mejor_n} mejora{'s' if mejor_n != 1 else ''}",
+                      style={"color": "#00c853", "fontWeight": "bold", "fontSize": "0.82rem",
+                             "marginRight": "16px"}),
+            html.Span(f"▼ {peor_n} empeora{'n' if peor_n != 1 else ''}",
+                      style={"color": "#d50000", "fontWeight": "bold", "fontSize": "0.82rem",
+                             "marginRight": "16px"}),
+            html.Span(f"● {igual_n} sin cambio / neutral",
+                      style={"color": "#ffd600", "fontSize": "0.82rem"}),
+        ], style={"marginBottom": "8px"})
+
+        return html.Div([summary, table]), False
+
+    @app.callback(
+        Output("m14-snap-cmp-download", "data"),
+        Input("m14-snap-cmp-export-btn", "n_clicks"),
+        prevent_initial_call=True,
+    )
+    def exportar_comparativa_csv(n_clicks):
+        if not n_clicks:
+            return no_update
+        export_df = _snap_cmp_cache.get("df_export")
+        if export_df is None or export_df.empty:
+            return no_update
+        date1 = _snap_cmp_cache.get("date1", "A").replace("-", "")
+        date2 = _snap_cmp_cache.get("date2", "B").replace("-", "")
+        filename = f"comparativa_{date1}_vs_{date2}.csv"
+        return dcc.send_data_frame(export_df.to_csv, filename, index=False)
 
     # ── Tab 3: Linea de tiempo ─────────────────────────────────────────────────
 
