@@ -786,6 +786,32 @@ textarea.form-control {
   font-weight: 600;
 }
 
+/* ── dcc.Tabs (Dash) — override fondo blanco por defecto ─────────────── */
+.tab-container,
+.tab-container > .tab {
+  background-color: var(--card-bg) !important;
+}
+
+/* Tab inactivo */
+.tab {
+  background-color: var(--card-bg) !important;
+  border-color: var(--border) !important;
+  color: var(--text-muted) !important;
+  border-bottom: none !important;
+  border-top: none !important;
+  border-left: none !important;
+  border-right: none !important;
+}
+
+/* Tab activo */
+.tab--selected {
+  background-color: var(--card-bg) !important;
+  border-top: none !important;
+  border-left: none !important;
+  border-right: none !important;
+  color: var(--text) !important;
+}
+
 .tab-content {
   padding-top: 16px;
 }
